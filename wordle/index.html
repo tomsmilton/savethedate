@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wordle — Flora &amp; Tom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Josefin+Sans:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/poster.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: #1B3A4B;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  .back-link {
+    position: fixed; top: 0.8rem; left: 0.8rem;
+    font-family: 'Josefin Sans', sans-serif;
+    font-size: 0.7rem; color: rgba(255,245,230,0.35);
+    text-decoration: none; z-index: 100; letter-spacing: 0.05em;
+  }
+  .back-link:hover { color: rgba(255,245,230,0.7); }
+
+  .title {
+    font-family: 'Abril Fatface', serif;
+    font-size: clamp(1.6rem, 6vw, 2.4rem);
+    color: #FFF5E6;
+    text-align: center;
+    margin-top: clamp(2.5rem, 5vh, 4rem);
+    margin-bottom: 0.3rem;
+  }
+
+  .subtitle {
+    font-family: 'Josefin Sans', sans-serif;
+    font-weight: 300;
+    font-size: clamp(0.6rem, 2vw, 0.75rem);
+    color: rgba(255,245,230,0.4);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: clamp(1rem, 3vh, 2rem);
+  }
+
+  #puzzle-phase {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 0 1rem;
+  }
+
+  /* Board */
+  .board {
+    display: grid;
+    grid-template-rows: repeat(6, 1fr);
+    gap: 5px;
+    margin-bottom: clamp(1rem, 3vh, 1.5rem);
+  }
+  .row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+  }
+  .tile {
+    width: clamp(50px, 14vw, 62px);
+    height: clamp(50px, 14vw, 62px);
+    border: 2px solid rgba(255,245,230,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Josefin Sans', sans-serif;
+    font-weight: 600;
+    font-size: clamp(1.4rem, 5vw, 1.8rem);
+    color: #FFF5E6;
+    text-transform: uppercase;
+    transition: border-color 0.15s;
+  }
+  .tile.filled {
+    border-color: rgba(255,245,230,0.4);
+    animation: pop 0.1s ease;
+  }
+  .tile.correct {
+    background: #538d4e;
+    border-color: #538d4e;
+    color: #fff;
+  }
+  .tile.present {
+    background: #b59f3b;
+    border-color: #b59f3b;
+    color: #fff;
+  }
+  .tile.absent {
+    background: rgba(255,245,230,0.1);
+    border-color: rgba(255,245,230,0.1);
+    color: rgba(255,245,230,0.5);
+  }
+  .tile.reveal {
+    animation: flipIn 0.3s ease forwards;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+  @keyframes flipIn {
+    0% { transform: scaleY(1); }
+    50% { transform: scaleY(0); }
+    100% { transform: scaleY(1); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+  }
+
+  /* Message */
+  .message {
+    font-family: 'Josefin Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #FFF5E6;
+    text-align: center;
+    min-height: 1.5rem;
+    margin-bottom: 0.8rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* Keyboard */
+  .keyboard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2rem;
+  }
+  .kb-row {
+    display: flex;
+    gap: 4px;
+  }
+  .key {
+    font-family: 'Josefin Sans', sans-serif;
+    font-weight: 600;
+    font-size: clamp(0.7rem, 2.5vw, 0.85rem);
+    padding: 0;
+    height: clamp(42px, 10vw, 52px);
+    min-width: clamp(28px, 7.5vw, 36px);
+    border: none;
+    border-radius: 4px;
+    background: rgba(255,245,230,0.2);
+    color: #FFF5E6;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    transition: background 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .key:active { transform: scale(0.95); }
+  .key.wide {
+    min-width: clamp(50px, 12vw, 64px);
+    font-size: clamp(0.55rem, 2vw, 0.7rem);
+    letter-spacing: 0.05em;
+  }
+  .key.correct { background: #538d4e; }
+  .key.present { background: #b59f3b; }
+  .key.absent { background: rgba(255,245,230,0.06); color: rgba(255,245,230,0.3); }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="../index.html">&larr; all puzzles</a>
+
+<div id="puzzle-phase">
+  <div class="title">Wordle</div>
+  <div class="subtitle">Guess the five-letter word in six tries</div>
+
+  <div class="board" id="board"></div>
+  <div class="message" id="message"></div>
+
+  <div class="keyboard" id="keyboard">
+    <div class="kb-row">
+      <button class="key" data-key="q">q</button>
+      <button class="key" data-key="w">w</button>
+      <button class="key" data-key="e">e</button>
+      <button class="key" data-key="r">r</button>
+      <button class="key" data-key="t">t</button>
+      <button class="key" data-key="y">y</button>
+      <button class="key" data-key="u">u</button>
+      <button class="key" data-key="i">i</button>
+      <button class="key" data-key="o">o</button>
+      <button class="key" data-key="p">p</button>
+    </div>
+    <div class="kb-row">
+      <button class="key" data-key="a">a</button>
+      <button class="key" data-key="s">s</button>
+      <button class="key" data-key="d">d</button>
+      <button class="key" data-key="f">f</button>
+      <button class="key" data-key="g">g</button>
+      <button class="key" data-key="h">h</button>
+      <button class="key" data-key="j">j</button>
+      <button class="key" data-key="k">k</button>
+      <button class="key" data-key="l">l</button>
+    </div>
+    <div class="kb-row">
+      <button class="key wide" data-key="Enter">Enter</button>
+      <button class="key" data-key="z">z</button>
+      <button class="key" data-key="x">x</button>
+      <button class="key" data-key="c">c</button>
+      <button class="key" data-key="v">v</button>
+      <button class="key" data-key="b">b</button>
+      <button class="key" data-key="n">n</button>
+      <button class="key" data-key="m">m</button>
+      <button class="key wide" data-key="Backspace">&larr;</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/config.js"></script>
+<script src="../assets/poster.js"></script>
+<script>
+(function() {
+  var ANSWER = 'CRAGS';
+  var WORD_LENGTH = 5;
+  var MAX_GUESSES = 6;
+
+  var currentRow = 0;
+  var currentCol = 0;
+  var gameOver = false;
+  var board = [];
+
+  // Build board
+  var boardEl = document.getElementById('board');
+  for (var r = 0; r < MAX_GUESSES; r++) {
+    var rowEl = document.createElement('div');
+    rowEl.className = 'row';
+    board[r] = [];
+    for (var c = 0; c < WORD_LENGTH; c++) {
+      var tile = document.createElement('div');
+      tile.className = 'tile';
+      rowEl.appendChild(tile);
+      board[r][c] = { el: tile, letter: '' };
+    }
+    boardEl.appendChild(rowEl);
+  }
+
+  var messageEl = document.getElementById('message');
+  var keyEls = {};
+  document.querySelectorAll('.key').forEach(function(el) {
+    keyEls[el.dataset.key.toUpperCase()] = el;
+  });
+
+  function showMessage(text) {
+    messageEl.textContent = text;
+  }
+
+  function addLetter(letter) {
+    if (currentCol >= WORD_LENGTH || gameOver) return;
+    var cell = board[currentRow][currentCol];
+    cell.letter = letter;
+    cell.el.textContent = letter;
+    cell.el.classList.add('filled');
+    currentCol++;
+  }
+
+  function removeLetter() {
+    if (currentCol <= 0 || gameOver) return;
+    currentCol--;
+    var cell = board[currentRow][currentCol];
+    cell.letter = '';
+    cell.el.textContent = '';
+    cell.el.classList.remove('filled');
+  }
+
+  function revealRow(row, results, callback) {
+    var delay = 0;
+    for (var i = 0; i < WORD_LENGTH; i++) {
+      (function(idx, d) {
+        setTimeout(function() {
+          var tile = board[row][idx].el;
+          tile.classList.add('reveal');
+          setTimeout(function() {
+            tile.classList.add(results[idx]);
+            // Update keyboard
+            var letter = board[row][idx].letter;
+            var keyEl = keyEls[letter];
+            if (keyEl) {
+              var current = keyEl.dataset.state || '';
+              if (results[idx] === 'correct') {
+                keyEl.dataset.state = 'correct';
+                keyEl.className = 'key correct';
+              } else if (results[idx] === 'present' && current !== 'correct') {
+                keyEl.dataset.state = 'present';
+                keyEl.className = 'key present';
+              } else if (results[idx] === 'absent' && !current) {
+                keyEl.dataset.state = 'absent';
+                keyEl.className = 'key absent';
+              }
+            }
+          }, 150);
+        }, d);
+      })(i, delay);
+      delay += 300;
+    }
+    setTimeout(callback, delay + 200);
+  }
+
+  function evaluateGuess(guess) {
+    var results = ['absent', 'absent', 'absent', 'absent', 'absent'];
+    var answerArr = ANSWER.split('');
+    var remaining = [];
+
+    // First pass: correct letters
+    for (var i = 0; i < WORD_LENGTH; i++) {
+      if (guess[i] === answerArr[i]) {
+        results[i] = 'correct';
+        answerArr[i] = null;
+      } else {
+        remaining.push(i);
+      }
+    }
+
+    // Second pass: present letters
+    for (var j = 0; j < remaining.length; j++) {
+      var idx = remaining[j];
+      var pos = answerArr.indexOf(guess[idx]);
+      if (pos !== -1) {
+        results[idx] = 'present';
+        answerArr[pos] = null;
+      }
+    }
+
+    return results;
+  }
+
+  function submitGuess() {
+    if (currentCol < WORD_LENGTH || gameOver) {
+      if (currentCol < WORD_LENGTH && !gameOver) {
+        // Shake the row
+        var rowEl = board[currentRow][0].el.parentElement;
+        rowEl.style.animation = 'shake 0.4s ease';
+        setTimeout(function() { rowEl.style.animation = ''; }, 400);
+        showMessage('Not enough letters');
+        setTimeout(function() { if (messageEl.textContent === 'Not enough letters') showMessage(''); }, 1500);
+      }
+      return;
+    }
+
+    var guess = '';
+    for (var i = 0; i < WORD_LENGTH; i++) {
+      guess += board[currentRow][i].letter;
+    }
+
+    var results = evaluateGuess(guess);
+    var row = currentRow;
+    gameOver = true; // Prevent input during animation
+
+    revealRow(row, results, function() {
+      var won = results.every(function(r) { return r === 'correct'; });
+      if (won) {
+        var messages = ['Genius!', 'Magnificent!', 'Impressive!', 'Splendid!', 'Great!', 'Phew!'];
+        showMessage(messages[row] || 'Well done!');
+        setTimeout(function() {
+          triggerPosterReveal('puzzle-phase');
+        }, 1200);
+      } else if (row >= MAX_GUESSES - 1) {
+        showMessage('The word was ' + ANSWER);
+      } else {
+        gameOver = false;
+        currentRow++;
+        currentCol = 0;
+      }
+    });
+  }
+
+  // Keyboard clicks
+  document.getElementById('keyboard').addEventListener('click', function(e) {
+    var btn = e.target.closest('.key');
+    if (!btn || gameOver) return;
+    var key = btn.dataset.key;
+    if (key === 'Enter') submitGuess();
+    else if (key === 'Backspace') removeLetter();
+    else addLetter(key.toUpperCase());
+  });
+
+  // Physical keyboard
+  document.addEventListener('keydown', function(e) {
+    if (gameOver) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Enter') submitGuess();
+    else if (e.key === 'Backspace') removeLetter();
+    else if (/^[a-zA-Z]$/.test(e.key)) addLetter(e.key.toUpperCase());
+  });
+})();
+</script>
+<div style="position:fixed;bottom:0.5rem;left:0;right:0;text-align:center;font-family:'Josefin Sans',sans-serif;font-weight:300;font-size:0.55rem;color:rgba(255,245,230,0.15);letter-spacing:0.1em;pointer-events:none;">Made by Flora and Claude</div>
+</body>
+</html>

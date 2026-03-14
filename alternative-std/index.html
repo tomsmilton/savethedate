@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flora & Tom</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #1B3A4B;
+    cursor: default;
+    user-select: none;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<script>
+(function () {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
+  // --- Configuration ---
+  const CUTOUT_COUNT = 30;        // total floating cutouts
+  const MIN_SIZE = 60;
+  const MAX_SIZE = 140;
+  const MIN_SPEED = 0.5;
+  const MAX_SPEED = 2.5;
+  const MOUSE_RADIUS = 120;       // pixels – repulsion zone around cursor
+  const MOUSE_FORCE = 8;          // strength of mouse push
+  const EDGE_BOUNCE_DAMPING = 0.9;
+
+  // --- State ---
+  let width, height;
+  let mouseX = -9999, mouseY = -9999;
+  const cutouts = [];
+  const images = [];
+  let imagesLoaded = false;
+
+  // --- Resize ---
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // --- Mouse tracking ---
+  window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+  window.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; });
+
+  // Touch support
+  window.addEventListener('touchmove', e => {
+    const t = e.touches[0];
+    mouseX = t.clientX;
+    mouseY = t.clientY;
+  }, { passive: true });
+  window.addEventListener('touchend', () => { mouseX = -9999; mouseY = -9999; });
+
+  // --- Load cutout images ---
+  // We'll scan the cutouts folder. Put your PNG/JPG files in alternative-std/cutouts/
+  // Name them however you like – they'll all be loaded.
+
+  function loadImages(paths) {
+    let loaded = 0;
+    if (paths.length === 0) {
+      // No images found – show placeholder circles
+      imagesLoaded = true;
+      spawnCutouts();
+      return;
+    }
+    paths.forEach(src => {
+      const img = new Image();
+      img.onload = () => {
+        images.push(img);
+        loaded++;
+        if (loaded === paths.length) {
+          imagesLoaded = true;
+          spawnCutouts();
+        }
+      };
+      img.onerror = () => {
+        loaded++;
+        if (loaded === paths.length) {
+          imagesLoaded = true;
+          spawnCutouts();
+        }
+      };
+      img.src = src;
+    });
+  }
+
+  // Fetch the list of cutout images from a manifest file
+  // To keep things simple we use a manifest JSON instead of directory listing
+  fetch('cutouts/manifest.json')
+    .then(r => r.json())
+    .then(files => {
+      const paths = files.map(f => 'cutouts/' + f);
+      loadImages(paths);
+    })
+    .catch(() => {
+      // No manifest yet – use placeholders so the page still works
+      console.log('No cutouts/manifest.json found – using colour placeholders. Add your images and run: node generate-manifest.js');
+      imagesLoaded = true;
+      spawnCutouts();
+    });
+
+  // --- Cutout entity ---
+  function randomBetween(a, b) { return a + Math.random() * (b - a); }
+
+  function spawnCutouts() {
+    for (let i = 0; i < CUTOUT_COUNT; i++) {
+      const size = randomBetween(MIN_SIZE, MAX_SIZE);
+      const angle = Math.random() * Math.PI * 2;
+      const speed = randomBetween(MIN_SPEED, MAX_SPEED);
+
+      cutouts.push({
+        x: randomBetween(size, width - size),
+        y: randomBetween(size, height - size),
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: size,
+        rotation: Math.random() * Math.PI * 2,
+        rotationSpeed: (Math.random() - 0.5) * 0.02,
+        img: images.length > 0 ? images[i % images.length] : null,
+        hue: Math.random() * 360  // fallback colour
+      });
+    }
+    requestAnimationFrame(loop);
+  }
+
+  // --- Physics update ---
+  function update() {
+    for (const c of cutouts) {
+      // Mouse repulsion
+      const dx = c.x - mouseX;
+      const dy = c.y - mouseY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < MOUSE_RADIUS && dist > 0) {
+        const force = (1 - dist / MOUSE_RADIUS) * MOUSE_FORCE;
+        c.vx += (dx / dist) * force;
+        c.vy += (dy / dist) * force;
+      }
+
+      // Apply velocity
+      c.x += c.vx;
+      c.y += c.vy;
+
+      // Light drag so they don't accelerate forever
+      c.vx *= 0.995;
+      c.vy *= 0.995;
+
+      // Ensure minimum speed so they keep floating
+      const spd = Math.sqrt(c.vx * c.vx + c.vy * c.vy);
+      if (spd < MIN_SPEED) {
+        const scale = MIN_SPEED / (spd || 1);
+        c.vx *= scale;
+        c.vy *= scale;
+      }
+
+      // Edge bounce
+      const half = c.size / 2;
+      if (c.x - half < 0)       { c.x = half;          c.vx = Math.abs(c.vx) * EDGE_BOUNCE_DAMPING; }
+      if (c.x + half > width)   { c.x = width - half;  c.vx = -Math.abs(c.vx) * EDGE_BOUNCE_DAMPING; }
+      if (c.y - half < 0)       { c.y = half;          c.vy = Math.abs(c.vy) * EDGE_BOUNCE_DAMPING; }
+      if (c.y + half > height)  { c.y = height - half; c.vy = -Math.abs(c.vy) * EDGE_BOUNCE_DAMPING; }
+
+      // Rotation
+      c.rotation += c.rotationSpeed;
+    }
+  }
+
+  // --- Draw ---
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    for (const c of cutouts) {
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(c.rotation);
+
+      if (c.img) {
+        // Draw image, keeping aspect ratio, fitting into c.size
+        const aspect = c.img.width / c.img.height;
+        let w, h;
+        if (aspect > 1) { w = c.size; h = c.size / aspect; }
+        else            { h = c.size; w = c.size * aspect; }
+        ctx.drawImage(c.img, -w / 2, -h / 2, w, h);
+      } else {
+        // Placeholder circle
+        ctx.beginPath();
+        ctx.arc(0, 0, c.size / 2, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${c.hue}, 60%, 65%, 0.5)`;
+        ctx.fill();
+        ctx.strokeStyle = `hsla(${c.hue}, 60%, 75%, 0.8)`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+  }
+
+  // --- Loop ---
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+})();
+</script>
+</body>
+</html>

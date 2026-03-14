@@ -174,5 +174,18 @@
 @keyframes popIn { 0% { opacity:0; transform:scale(0); } 75% { opacity:1; transform:scale(1.15); } 100% { opacity:1; transform:scale(1); } }
 @keyframes glowIn { from { opacity:0; filter:blur(8px); } to { opacity:1; filter:blur(0); } }
 
+.poster-made-by {
+  width: 100%;
+  text-align: center;
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 300;
+  font-size: 0.55rem;
+  color: rgba(255,245,230,0.15);
+  letter-spacing: 0.1em;
+  pointer-events: none;
+  padding: 1rem 0 0.5rem;
+  margin-top: auto;
+}
+
 .confetti-canvas { display:none; position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; z-index:1000; }
 .confetti-canvas.show { display:block; }

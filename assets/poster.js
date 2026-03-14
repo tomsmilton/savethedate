@@ -32,6 +32,7 @@
   </div>
   <a class="poster-back" id="poster-back">\u2190 back to puzzle</a>
   <a class="poster-home" href="../index.html">\u2190 all puzzles</a>
+  <div class="poster-made-by">Made by Flora and Claude</div>
 </div>
 <canvas class="confetti-canvas" id="confetti-canvas"></canvas>`;
 
