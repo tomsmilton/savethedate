@@ -282,6 +282,9 @@
     if (!email) { emailInput.focus(); return; }
     var fullName = firstName + ' ' + surname;
     localStorage.setItem('guestName', fullName);
+    localStorage.setItem('guestFirstName', firstName);
+    localStorage.setItem('guestSurname', surname);
+    localStorage.setItem('guestEmail', email);
     gate.style.display = 'none';
     puzzles.classList.add('visible');
     fetch(window.APPS_SCRIPT_URL, {

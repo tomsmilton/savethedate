@@ -94,6 +94,9 @@
       fetch(window.APPS_SCRIPT_URL, {
         method: 'POST',
         body: JSON.stringify({
+          firstName: localStorage.getItem('guestFirstName') || '',
+          surname: localStorage.getItem('guestSurname') || '',
+          email: localStorage.getItem('guestEmail') || '',
           name: guestName,
           event: 'puzzle_complete',
           puzzle: puzzlePhaseId,
