@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flora &amp; Tom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Josefin+Sans:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: #1B3A4B;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Starburst background */
+  .bg-burst {
+    position: fixed; inset: 0;
+    background: repeating-conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(212,167,57,0.08) 0deg 6deg,
+      transparent 6deg 12deg
+    );
+    animation: spin 200s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .content {
+    position: relative; z-index: 1;
+    text-align: center;
+    padding: 2rem 1.5rem;
+    max-width: 700px;
+    width: 100%;
+  }
+
+  .names {
+    font-family: 'Abril Fatface', serif;
+    font-size: clamp(2.5rem, 10vw, 4.5rem);
+    line-height: 1.05;
+    margin-bottom: 0.3rem;
+  }
+  .name-flora { color: #E8A87C; }
+  .name-amp {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(1rem, 4vw, 1.6rem);
+    color: #D4A739;
+    display: block;
+    margin: 0.1rem 0;
+  }
+  .name-thomas { color: #FFF5E6; }
+
+  .rule {
+    width: 60%; max-width: 180px; height: 1px;
+    background: rgba(212,167,57,0.4);
+    margin: 1.5rem auto;
+  }
+
+  .tagline {
+    font-family: 'Josefin Sans', sans-serif;
+    font-weight: 300;
+    font-size: clamp(0.8rem, 2.5vw, 1rem);
+    letter-spacing: 0.15em;
+    color: rgba(255,245,230,0.55);
+    text-transform: uppercase;
+    margin-bottom: 2.5rem;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(0.8rem, 2vw, 1.5rem);
+    width: 100%;
+  }
+
+  .card {
+    background: rgba(255,245,230,0.06);
+    border: 1px solid rgba(212,167,57,0.25);
+    border-radius: 8px;
+    padding: clamp(1.2rem, 3vw, 2rem) clamp(0.8rem, 2vw, 1.2rem);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .card:hover {
+    background: rgba(255,245,230,0.12);
+    border-color: rgba(212,167,57,0.5);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+
+  .card-icon {
+    font-size: clamp(2rem, 6vw, 3rem);
+    line-height: 1;
+    opacity: 0.9;
+  }
+
+  .card-title {
+    font-family: 'Abril Fatface', serif;
+    font-size: clamp(1rem, 3vw, 1.3rem);
+    color: #FFF5E6;
+  }
+
+  .card-desc {
+    font-family: 'Josefin Sans', sans-serif;
+    font-weight: 300;
+    font-size: clamp(0.6rem, 1.8vw, 0.75rem);
+    color: rgba(255,245,230,0.4);
+    letter-spacing: 0.05em;
+    line-height: 1.5;
+  }
+
+  /* Card accent colors */
+  .card-crossword .card-icon { color: #E8A87C; }
+  .card-sudoku .card-icon { color: #D4A739; }
+  .card-diff .card-icon { color: #1F9A8F; }
+
+  .footer {
+    font-family: 'Josefin Sans', sans-serif;
+    font-weight: 300;
+    font-size: 0.6rem;
+    color: rgba(255,245,230,0.2);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 3rem;
+  }
+
+  /* Name gate */
+  .name-gate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+  }
+  .name-gate-prompt {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(0.85rem, 2.5vw, 1.05rem);
+    color: rgba(255,245,230,0.6);
+    line-height: 1.5;
+  }
+  .name-gate-input {
+    font-family: 'Josefin Sans', sans-serif;
+    font-size: 1rem;
+    padding: 0.6rem 1rem;
+    border: 1px solid rgba(212,167,57,0.4);
+    border-radius: 4px;
+    background: rgba(255,245,230,0.08);
+    color: #FFF5E6;
+    text-align: center;
+    width: 100%;
+    max-width: 260px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .name-gate-input::placeholder { color: rgba(255,245,230,0.25); }
+  .name-gate-input:focus { border-color: rgba(212,167,57,0.7); }
+  .name-gate-btn {
+    font-family: 'Josefin Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.55rem 2rem;
+    border: 1px solid rgba(212,167,57,0.5);
+    border-radius: 4px;
+    background: rgba(212,167,57,0.15);
+    color: #D4A739;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .name-gate-btn:hover {
+    background: rgba(212,167,57,0.3);
+    border-color: #D4A739;
+  }
+
+  .puzzles-section { display: none; }
+  .puzzles-section.visible { display: contents; }
+
+  /* Entrance animations */
+  .content > * {
+    opacity: 0;
+    animation: fadeUp 0.6s ease-out forwards;
+  }
+  .content > *:nth-child(1) { animation-delay: 0.1s; }
+  .content > *:nth-child(2) { animation-delay: 0.3s; }
+  .content > *:nth-child(3) { animation-delay: 0.5s; }
+  .content > *:nth-child(4) { animation-delay: 0.7s; }
+  .content > *:nth-child(5) { animation-delay: 0.9s; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 500px) {
+    .cards { grid-template-columns: 1fr; max-width: 280px; margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-burst"></div>
+
+<div class="content">
+  <div class="names">
+    <span class="name-flora">Flora</span>
+    <span class="name-amp">&amp;</span>
+    <span class="name-thomas">Thomas</span>
+  </div>
+
+  <div class="rule"></div>
+
+  <div id="name-gate" class="name-gate">
+    <div class="name-gate-prompt">Enter your details to begin</div>
+    <input class="name-gate-input" id="first-name-input" type="text" placeholder="First name" autocomplete="given-name">
+    <input class="name-gate-input" id="surname-input" type="text" placeholder="Surname" autocomplete="family-name">
+    <input class="name-gate-input" id="email-input" type="email" placeholder="Email" autocomplete="email">
+    <button class="name-gate-btn" id="name-btn">Continue</button>
+  </div>
+
+  <div id="puzzles-section" class="puzzles-section">
+    <div class="tagline">Save a puzzle to find out the date</div>
+
+    <div class="cards">
+      <a class="card card-crossword" href="crossword/index.html">
+        <div class="card-icon">&#x2BC6;</div>
+        <div class="card-title">Crossword</div>
+        <div class="card-desc">20 cryptic clues about us</div>
+      </a>
+      <a class="card card-sudoku" href="sudoku/index.html">
+        <div class="card-icon">&#x25A6;</div>
+        <div class="card-title">Sudoku</div>
+        <div class="card-desc">A medium brain&ndash;teaser</div>
+      </a>
+      <a class="card card-diff" href="difference/index.html">
+        <div class="card-icon">&#x2609;</div>
+        <div class="card-title">Spot the Difference</div>
+        <div class="card-desc">Find the hidden changes</div>
+      </a>
+    </div>
+
+    <div class="footer">Choose your challenge</div>
+  </div>
+</div>
+
+<script src="assets/config.js"></script>
+<script>
+(function() {
+  var gate = document.getElementById('name-gate');
+  var puzzles = document.getElementById('puzzles-section');
+  var firstNameInput = document.getElementById('first-name-input');
+  var surnameInput = document.getElementById('surname-input');
+  var emailInput = document.getElementById('email-input');
+  var btn = document.getElementById('name-btn');
+
+  var savedName = localStorage.getItem('guestName');
+  if (savedName) {
+    gate.style.display = 'none';
+    puzzles.classList.add('visible');
+    return;
+  }
+
+  function submit() {
+    var firstName = firstNameInput.value.trim();
+    var surname = surnameInput.value.trim();
+    var email = emailInput.value.trim();
+    if (!firstName) { firstNameInput.focus(); return; }
+    if (!surname) { surnameInput.focus(); return; }
+    if (!email) { emailInput.focus(); return; }
+    var fullName = firstName + ' ' + surname;
+    localStorage.setItem('guestName', fullName);
+    gate.style.display = 'none';
+    puzzles.classList.add('visible');
+    fetch(window.APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ firstName: firstName, surname: surname, email: email, name: fullName, event: 'visit', timestamp: new Date().toISOString() })
+    }).catch(function() {});
+  }
+
+  btn.addEventListener('click', submit);
+  [firstNameInput, surnameInput, emailInput].forEach(function(el) {
+    el.addEventListener('keydown', function(e) { if (e.key === 'Enter') submit(); });
+  });
+})();
+</script>
+<div style="position:fixed;bottom:0.5rem;left:0;right:0;text-align:center;font-family:'Josefin Sans',sans-serif;font-weight:300;font-size:0.55rem;color:rgba(255,245,230,0.15);letter-spacing:0.1em;pointer-events:none;">Made by Flora and Claude</div>
+</body>
+</html>

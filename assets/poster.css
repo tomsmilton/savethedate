@@ -1,0 +1,178 @@
+/* ===== POSTER REVEAL — shared across all puzzle pages ===== */
+#poster-phase {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  background: #1B3A4B;
+}
+#poster-phase.visible { display: flex; }
+
+.poster-card {
+  position: relative;
+  max-width: 480px;
+  width: 90%;
+  margin: clamp(0.8rem, 2vh, 1.5rem) auto 0;
+  text-align: center;
+  z-index: 1;
+}
+
+.p-el { opacity: 0; }
+.p-el.anim { animation-fill-mode: forwards; }
+
+/* The Save the Date image — cropped to show visual top portion only */
+.poster-img-wrap {
+  width: 100%;
+  aspect-ratio: 1200 / 560;
+  border-radius: 6px 6px 0 0;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+}
+.poster-img {
+  width: 100%;
+  height: 130%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+/* Text area below the image */
+.poster-text {
+  background: #f5f0e8;
+  border-radius: 0 0 6px 6px;
+  padding: clamp(1rem, 3vw, 1.5rem) clamp(0.8rem, 2vw, 1.2rem);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+}
+.poster-couple {
+  font-family: 'Abril Fatface', serif;
+  font-size: clamp(1.5rem, 5vw, 2.2rem);
+  color: #1B3A4B;
+  line-height: 1.1;
+}
+.poster-date-text {
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 600;
+  font-size: clamp(0.8rem, 2.5vw, 1rem);
+  color: #D4622B;
+  letter-spacing: 0.08em;
+  margin-top: 0.3rem;
+}
+.poster-venue-text {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(0.7rem, 2vw, 0.85rem);
+  color: #444;
+  line-height: 1.6;
+  margin-top: 0.5rem;
+}
+.poster-venue-name {
+  font-weight: 700;
+  color: #1B3A4B;
+}
+
+/* Floating retro stars */
+.poster-stars {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.poster-star {
+  position: absolute;
+  color: rgba(212,167,57,0.22);
+  font-size: 1.6rem;
+  animation: floatStar linear infinite;
+}
+.poster-star:nth-child(1)  { left:5%;  top:8%;  font-size:1.2rem; animation-duration:7s; }
+.poster-star:nth-child(2)  { left:15%; top:75%; font-size:2rem;   animation-duration:9s; animation-delay:-2s; }
+.poster-star:nth-child(3)  { left:80%; top:12%; font-size:1.4rem; animation-duration:8s; animation-delay:-4s; }
+.poster-star:nth-child(4)  { left:90%; top:65%; font-size:1.8rem; animation-duration:6s; animation-delay:-1s; }
+.poster-star:nth-child(5)  { left:50%; top:3%;  font-size:1rem;   animation-duration:10s; animation-delay:-3s; }
+.poster-star:nth-child(6)  { left:35%; top:90%; font-size:1.6rem; animation-duration:8s; animation-delay:-5s; }
+.poster-star:nth-child(7)  { left:70%; top:85%; font-size:1.1rem; animation-duration:7s; animation-delay:-6s; }
+.poster-star:nth-child(8)  { left:25%; top:40%; font-size:1.3rem; animation-duration:11s; animation-delay:-2s; }
+
+@keyframes floatStar {
+  0%   { transform: translateY(0) rotate(0deg) scale(1);   opacity: 0; }
+  15%  { opacity: 1; }
+  50%  { transform: translateY(-18px) rotate(180deg) scale(1.12); }
+  85%  { opacity: 1; }
+  100% { transform: translateY(0) rotate(360deg) scale(1);  opacity: 0; }
+}
+
+/* Large date overlay below card */
+.poster-date-overlay {
+  margin-top: clamp(0.6rem, 2vh, 1rem);
+}
+.poster-date-big {
+  font-family: 'Abril Fatface', serif;
+  font-size: clamp(3rem, 12vw, 5.5rem);
+  line-height: 0.9;
+  color: #D4A739;
+  display: block;
+  text-shadow: 0 2px 20px rgba(212,167,57,0.25);
+}
+.poster-date-year {
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 600;
+  font-size: clamp(1rem, 3.5vw, 1.5rem);
+  letter-spacing: 0.35em;
+  color: #E8A87C;
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.poster-footer {
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 300;
+  font-size: clamp(0.5rem, 1.6vw, 0.65rem);
+  color: rgba(255,245,230,0.3);
+  margin-top: clamp(0.5rem, 1.5vh, 1rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.poster-rsvp {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: clamp(0.55rem, 1.8vw, 0.72rem);
+  color: rgba(255,245,230,0.45);
+  margin-top: clamp(0.4rem, 1vh, 0.7rem);
+  padding-bottom: clamp(2rem, 4vh, 3rem);
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.poster-back {
+  position: fixed; bottom: 0.8rem; right: 0.8rem;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 0.65rem; color: rgba(255,245,230,0.3);
+  text-decoration: none; cursor: pointer; z-index: 600;
+  display: none; letter-spacing: 0.05em;
+}
+.poster-back:hover { color: rgba(255,245,230,0.7); }
+#poster-phase.visible .poster-back { display: block; }
+
+.poster-home {
+  position: fixed; bottom: 0.8rem; left: 0.8rem;
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 0.65rem; color: rgba(255,245,230,0.3);
+  text-decoration: none; cursor: pointer; z-index: 600;
+  display: none; letter-spacing: 0.05em;
+}
+.poster-home:hover { color: rgba(255,245,230,0.7); }
+#poster-phase.visible .poster-home { display: block; }
+
+@keyframes fadeInUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeInDown { from { opacity:0; transform:translateY(-28px); } to { opacity:1; transform:translateY(0); } }
+@keyframes scaleIn { from { opacity:0; transform:scale(0.7); } to { opacity:1; transform:scale(1); } }
+@keyframes popIn { 0% { opacity:0; transform:scale(0); } 75% { opacity:1; transform:scale(1.15); } 100% { opacity:1; transform:scale(1); } }
+@keyframes glowIn { from { opacity:0; filter:blur(8px); } to { opacity:1; filter:blur(0); } }
+
+.confetti-canvas { display:none; position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; z-index:1000; }
+.confetti-canvas.show { display:block; }

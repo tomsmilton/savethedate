@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sudoku &mdash; Flora &amp; Tom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Josefin+Sans:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/poster.css?v=3">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --cell: clamp(34px, 9vw, 52px); --accent: #1B3A4B; --gold: #D4A739; --bg: #faf8f5; }
+  body { font-family: 'Josefin Sans', sans-serif; background: var(--bg); color: #333; min-height: 100vh; }
+
+  #puzzle-phase { display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+
+  .top-bar {
+    width: 100%; background: var(--accent); color: #FFF5E6;
+    padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem;
+  }
+  .top-bar a { color: rgba(255,245,230,0.5); text-decoration: none; font-size: 0.8rem; }
+  .top-bar a:hover { color: #FFF5E6; }
+  .top-bar h1 { font-family: 'Abril Fatface', serif; font-size: clamp(1rem, 3vw, 1.4rem); font-weight: 400; flex: 1; text-align: center; }
+
+  .toolbar {
+    display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; padding: 1rem;
+  }
+  .toolbar button {
+    font-family: 'Josefin Sans', sans-serif; font-size: 0.8rem;
+    padding: 0.45rem 1.1rem; border: 1px solid var(--accent);
+    background: white; color: var(--accent); border-radius: 4px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .toolbar button:hover { background: var(--accent); color: white; }
+
+  .message { text-align: center; padding: 0.3rem 1rem; font-size: 0.95rem; color: var(--accent); min-height: 1.5rem; }
+
+  .sudoku-grid {
+    display: grid;
+    grid-template-columns: repeat(9, var(--cell));
+    grid-template-rows: repeat(9, var(--cell));
+    border: 3px solid var(--accent);
+    margin: 0.5rem auto;
+    background: var(--accent);
+    gap: 0;
+  }
+
+  .s-cell {
+    width: var(--cell); height: var(--cell);
+    position: relative; background: white;
+    display: flex; align-items: center; justify-content: center;
+    border: 0.5px solid #ccc;
+  }
+  /* Thick box borders */
+  .s-cell[data-c="2"], .s-cell[data-c="5"] { border-right: 2.5px solid var(--accent); }
+  .s-cell[data-c="3"], .s-cell[data-c="6"] { border-left: 2.5px solid var(--accent); }
+  .s-cell[data-r="2"], .s-cell[data-r="5"] { border-bottom: 2.5px solid var(--accent); }
+  .s-cell[data-r="3"], .s-cell[data-r="6"] { border-top: 2.5px solid var(--accent); }
+
+  .s-cell.given {
+    font-family: 'Playfair Display', serif;
+    font-size: calc(var(--cell) * 0.5);
+    font-weight: 700; color: var(--accent);
+  }
+
+  .s-cell input {
+    width: 100%; height: 100%; border: none; outline: none;
+    text-align: center; font-family: 'Josefin Sans', sans-serif;
+    font-size: calc(var(--cell) * 0.45); font-weight: 400;
+    color: var(--gold); background: transparent; caret-color: var(--accent);
+  }
+  .s-cell input:focus { background: transparent; }
+  .s-cell.hl { background: #f5f3f0; }
+  .s-cell.active { background: #f0ebe3; }
+  .s-cell.correct { background: #d4edda; }
+  .s-cell.incorrect input { color: #c0392b; }
+  .s-cell.all-ok { background: #d4edda; transition: background 0.3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+  .s-cell.incorrect { animation: shake 0.35s ease; }
+
+  .timer {
+    font-family: 'Josefin Sans', sans-serif; font-size: 0.85rem;
+    color: #aaa; letter-spacing: 0.1em; padding: 0.5rem;
+  }
+</style>
+</head>
+<body>
+
+<div id="puzzle-phase">
+  <div class="top-bar">
+    <a href="../index.html">&larr; back</a>
+    <h1>Sudoku</h1>
+    <span style="width:40px"></span>
+  </div>
+
+  <div class="toolbar">
+    <button id="btn-check">Check Puzzle</button>
+    <button id="btn-clear">Clear All</button>
+  </div>
+  <div class="message" id="message"></div>
+  <div class="timer" id="timer">00:00</div>
+
+  <div class="sudoku-grid" id="sgrid"></div>
+</div>
+
+<script>
+const PUZZLE = [
+  [4,0,3,5,0,0,0,0,0],
+  [5,6,0,0,0,1,0,7,3],
+  [0,0,1,3,2,6,0,0,5],
+  [0,0,0,0,0,5,0,0,7],
+  [2,0,7,8,4,9,6,0,0],
+  [9,1,4,0,0,3,5,0,0],
+  [0,4,0,0,0,0,0,0,0],
+  [0,0,0,0,0,7,3,0,0],
+  [0,7,5,0,3,0,9,2,8]
+];
+const SOLUTION = [
+  [4,2,3,5,7,8,1,6,9],
+  [5,6,8,4,9,1,2,7,3],
+  [7,9,1,3,2,6,8,4,5],
+  [8,3,6,2,1,5,4,9,7],
+  [2,5,7,8,4,9,6,3,1],
+  [9,1,4,7,6,3,5,8,2],
+  [3,4,9,1,8,2,7,5,6],
+  [6,8,2,9,5,7,3,1,4],
+  [1,7,5,6,3,4,9,2,8]
+];
+
+const grid = document.getElementById('sgrid');
+const cells = Array.from({length:9}, ()=>Array(9).fill(null));
+const cellEls = Array.from({length:9}, ()=>Array(9).fill(null));
+let activeR=-1, activeC=-1, done=false;
+
+for (let r=0; r<9; r++) {
+  for (let c=0; c<9; c++) {
+    const d = document.createElement('div');
+    d.className = 's-cell';
+    d.dataset.r = r; d.dataset.c = c;
+    if (PUZZLE[r][c]) {
+      d.classList.add('given');
+      d.textContent = PUZZLE[r][c];
+      cells[r][c] = { given: true, val: PUZZLE[r][c] };
+    } else {
+      const input = document.createElement('input');
+      input.type = 'text'; input.maxLength = 1;
+      input.setAttribute('inputmode', 'numeric');
+      input.setAttribute('autocomplete', 'off');
+      input.addEventListener('focus', () => onFocus(r, c));
+      input.addEventListener('input', e => onInput(r, c, e));
+      input.addEventListener('keydown', e => onKey(r, c, e));
+      d.appendChild(input);
+      cells[r][c] = { given: false, input };
+    }
+    cellEls[r][c] = d;
+    grid.appendChild(d);
+  }
+}
+
+function onFocus(r, c) {
+  activeR=r; activeC=c;
+  for(let i=0;i<9;i++) for(let j=0;j<9;j++) cellEls[i][j].classList.remove('hl','active');
+  for(let i=0;i<9;i++) { cellEls[r][i].classList.add('hl'); cellEls[i][c].classList.add('hl'); }
+  const br=Math.floor(r/3)*3, bc=Math.floor(c/3)*3;
+  for(let i=br;i<br+3;i++) for(let j=bc;j<bc+3;j++) cellEls[i][j].classList.add('hl');
+  cellEls[r][c].classList.add('active');
+}
+
+function onInput(r, c, e) {
+  let v = e.target.value.replace(/[^1-9]/g, '');
+  e.target.value = v.slice(-1);
+  cellEls[r][c].classList.remove('correct','incorrect');
+  checkSilent();
+}
+
+function onKey(r, c, e) {
+  if (e.key==='Backspace' && !cells[r][c].input.value) { e.preventDefault(); moveTo(r,c,-1); }
+  else if(e.key==='ArrowRight') { e.preventDefault(); moveTo(r,c,1); }
+  else if(e.key==='ArrowLeft') { e.preventDefault(); moveTo(r,c,-1); }
+  else if(e.key==='ArrowDown') { e.preventDefault(); moveToV(r,c,1); }
+  else if(e.key==='ArrowUp') { e.preventDefault(); moveToV(r,c,-1); }
+  else if(e.key==='Tab') { e.preventDefault(); moveTo(r,c,e.shiftKey?-1:1); }
+}
+
+function moveTo(r,c,dir) {
+  let nc=c+dir, nr=r;
+  while(nr>=0&&nr<9) {
+    while(nc>=0&&nc<9) { if(!cells[nr][nc].given) { cells[nr][nc].input.focus(); return; } nc+=dir; }
+    nr+=dir; nc=dir>0?0:8;
+  }
+}
+function moveToV(r,c,dir) {
+  let nr=r+dir;
+  while(nr>=0&&nr<9) { if(!cells[nr][c].given) { cells[nr][c].input.focus(); return; } nr+=dir; }
+}
+
+function checkSilent() {
+  if(done) return;
+  for(let r=0;r<9;r++) for(let c=0;c<9;c++) {
+    if(cells[r][c].given) continue;
+    const v=parseInt(cells[r][c].input.value);
+    if(v!==SOLUTION[r][c]) return;
+  }
+  done=true;
+  for(let r=0;r<9;r++) for(let c=0;c<9;c++) cellEls[r][c].classList.add('all-ok');
+  triggerPosterReveal('puzzle-phase');
+}
+
+document.getElementById('btn-check').addEventListener('click', () => {
+  if(done) return;
+  let ok=true, filled=true;
+  for(let r=0;r<9;r++) for(let c=0;c<9;c++) {
+    if(cells[r][c].given) continue;
+    const v=parseInt(cells[r][c].input.value);
+    if(isNaN(v)) { filled=false; continue; }
+    if(v===SOLUTION[r][c]) { cellEls[r][c].classList.add('correct'); cellEls[r][c].classList.remove('incorrect'); }
+    else { cellEls[r][c].classList.remove('correct'); cellEls[r][c].classList.add('incorrect'); ok=false; }
+  }
+  const msg=document.getElementById('message');
+  if(filled&&ok) { done=true; triggerPosterReveal('puzzle-phase'); }
+  else if(!filled) { msg.textContent='Some cells are still empty!'; setTimeout(()=>{msg.textContent='';},3000); }
+  else { msg.textContent='Some numbers are incorrect.'; setTimeout(()=>{msg.textContent='';},3000); }
+});
+
+document.getElementById('btn-clear').addEventListener('click', () => {
+  for(let r=0;r<9;r++) for(let c=0;c<9;c++) if(!cells[r][c].given) { cells[r][c].input.value=''; cellEls[r][c].classList.remove('correct','incorrect','all-ok'); }
+  document.getElementById('message').textContent='';
+});
+
+/* Timer */
+let seconds = 0;
+const timerEl = document.getElementById('timer');
+setInterval(() => {
+  if(done) return;
+  seconds++;
+  const m = String(Math.floor(seconds/60)).padStart(2,'0');
+  const s = String(seconds%60).padStart(2,'0');
+  timerEl.textContent = `${m}:${s}`;
+}, 1000);
+</script>
+<script src="../assets/config.js"></script>
+<script src="../assets/poster.js?v=3"></script>
+<div style="position:fixed;bottom:0.5rem;left:0;right:0;text-align:center;font-family:'Josefin Sans',sans-serif;font-weight:300;font-size:0.55rem;color:rgba(255,245,230,0.15);letter-spacing:0.1em;pointer-events:none;">Made by Flora and Claude</div>
+</body>
+</html>

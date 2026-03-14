@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crossword &mdash; Flora &amp; Tom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Josefin+Sans:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/poster.css?v=3">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cell: 34px;
+    --accent: #1B3A4B;
+    --accent-light: #d0e8f0;
+    --gold: #D4A739;
+    --coral: #E8A87C;
+    --bg: #faf8f5;
+    --text: #333;
+  }
+  body { font-family: 'Josefin Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  #puzzle-phase {
+    display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+    padding-bottom: 2rem;
+  }
+
+  .top-bar {
+    width: 100%; background: var(--accent); color: #FFF5E6;
+    padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem;
+  }
+  .top-bar a { color: rgba(255,245,230,0.5); text-decoration: none; font-size: 0.8rem; }
+  .top-bar a:hover { color: #FFF5E6; }
+  .top-bar h1 {
+    font-family: 'Abril Fatface', serif; font-size: clamp(1rem, 3vw, 1.4rem);
+    font-weight: 400; flex: 1; text-align: center;
+  }
+
+  .toolbar {
+    display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;
+    padding: 1rem;
+  }
+  .toolbar button {
+    font-family: 'Josefin Sans', sans-serif; font-size: 0.8rem;
+    padding: 0.45rem 1.1rem; border: 1px solid var(--accent);
+    background: white; color: var(--accent); border-radius: 4px;
+    cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em;
+  }
+  .toolbar button:hover { background: var(--accent); color: white; }
+  .toolbar button.gold { border-color: var(--gold); color: #8B6914; }
+  .toolbar button.gold:hover { background: var(--gold); color: white; }
+
+  .clue-banner {
+    background: var(--accent); color: #FFF5E6; border-radius: 6px;
+    padding: 0.5rem 1rem; font-size: 0.82rem;
+    max-width: 600px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    min-height: 2rem; flex-wrap: wrap;
+  }
+  .clue-banner:empty { display: none; }
+  .clue-banner .clue-label { font-weight: 600; color: var(--coral); }
+  .clue-banner .clue-text { color: #FFF5E6; }
+  .clue-banner .clue-hint {
+    color: var(--gold); font-style: italic; font-size: 0.78rem;
+  }
+
+  .message {
+    text-align: center; padding: 0.3rem 1rem; font-size: 0.95rem;
+    color: var(--accent); min-height: 1.5rem;
+  }
+
+  .grid-wrap {
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    padding: 0.5rem; max-width: 100%;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), var(--cell));
+    grid-template-rows: repeat(var(--rows), var(--cell));
+    gap: 0; border: 2px solid #888; background: #888; user-select: none;
+    margin: 0 auto;
+  }
+
+  .cell { width: var(--cell); height: var(--cell); position: relative; background: white; border: 0.5px solid #ccc; }
+  .cell.black { background: var(--accent); border-color: var(--accent); }
+  .cell .num { position: absolute; top: 1px; left: 2px; font-size: 8px; color: #666; pointer-events: none; z-index: 1; font-weight: 600; }
+  .cell input {
+    width: 100%; height: 100%; border: none; outline: none; text-align: center;
+    font-size: 15px; font-family: 'Courier New', monospace; font-weight: 700;
+    text-transform: uppercase; background: transparent; color: var(--text);
+    caret-color: var(--accent); padding: 0; padding-top: 3px;
+  }
+  .cell.hl { background: #fdf0d5; }
+  .cell.active { background: #f4d799; }
+  .cell.correct { background: #d4edda; }
+  .cell.incorrect input { color: #c0392b; }
+  .cell.all-ok { background: #d4edda; transition: background 0.3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-3px)} 40%{transform:translateX(3px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+  .cell.incorrect { animation: shake 0.4s ease; }
+
+  .main-layout {
+    display: flex; flex-direction: row; align-items: flex-start;
+    justify-content: center; gap: 1.5rem; width: 100%;
+    padding: 0 1rem; max-width: 1100px; margin: 0 auto;
+  }
+  .grid-col { flex-shrink: 0; }
+
+  .clue-list {
+    flex: 1; min-width: 220px; max-width: 320px;
+    max-height: calc(100vh - 160px); overflow-y: auto;
+    font-size: 0.78rem; line-height: 1.6;
+    padding-right: 0.5rem;
+  }
+  .clue-list h3 {
+    font-family: 'Abril Fatface', serif; font-weight: 400;
+    font-size: 0.95rem; color: var(--accent);
+    margin: 0.8rem 0 0.3rem; padding-bottom: 0.2rem;
+    border-bottom: 1px solid #ddd;
+  }
+  .clue-list h3:first-child { margin-top: 0; }
+  .clue-list .clue-item {
+    padding: 0.25rem 0.4rem; border-radius: 3px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .clue-list .clue-item:hover { background: #f0ebe0; }
+  .clue-list .clue-item.active { background: #fdf0d5; font-weight: 600; }
+  .clue-list .clue-num { color: var(--accent); font-weight: 600; margin-right: 0.3rem; }
+
+  @media (min-width: 901px) {
+    .clue-list-bottom { display: none; }
+  }
+  @media (max-width: 900px) {
+    .main-layout { flex-direction: column; align-items: center; }
+    .clue-list-side { display: none; }
+    .clue-list-bottom { display: block; max-height: none; max-width: 650px; width: 90%; margin: 1rem auto 0; }
+    .clue-list { max-width: 100%; max-height: none; }
+  }
+  @media (max-width: 700px) { :root { --cell: 26px; } .cell .num { font-size: 6px; } .cell input { font-size: 12px; } }
+  @media (max-width: 500px) { :root { --cell: 21px; } .cell .num { font-size: 5px; } .cell input { font-size: 10px; padding-top: 2px; } }
+</style>
+</head>
+<body>
+
+<div id="puzzle-phase">
+  <div class="top-bar">
+    <a href="../index.html">&larr; back</a>
+    <h1>Crossword</h1>
+    <span style="width:40px"></span>
+  </div>
+
+  <div class="toolbar">
+    <button id="btn-check">Check Puzzle</button>
+    <button id="btn-clue" class="gold">Get Clue</button>
+    <button id="btn-clear">Clear All</button>
+  </div>
+  <div class="clue-banner" id="clue-banner"></div>
+  <div class="message" id="message"></div>
+
+  <div class="main-layout">
+    <div class="grid-col">
+      <div class="grid-wrap">
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+    <div class="clue-list clue-list-side" id="clue-list-side"></div>
+  </div>
+
+  <div class="clue-list clue-list-bottom" id="clue-list-bottom"></div>
+</div>
+
+<script>
+const PUZZLE = {
+  gridWidth: 18, gridHeight: 15,
+  words: [
+    { word:"CLIMBING", clue:"Flora and Tom\u2019s shared passion \u2014 no ropes needed if you\u2019re bouldering", hint:"think alex honnold", row:0, col:1, dir:"down", n:1 },
+    { word:"TEDDINGTON", clue:"The London town where Tom grew up", hint:"where the first parkrun started", row:0, col:6, dir:"across", n:2 },
+    { word:"DORIS", clue:"The naughty border collie who ate the simnel cake", hint:"___ Day", row:0, col:9, dir:"down", n:3 },
+    { word:"OCTOBER", clue:"The month of the wedding", hint:"ten", row:0, col:14, dir:"down", n:4 },
+    { word:"PARIS", clue:"The city where they got engaged", hint:"___ holds the key to your heart", row:1, col:3, dir:"down", n:5 },
+    { word:"BEATLES", clue:"Flora\u2019s favourite band", hint:"JPGR", row:2, col:6, dir:"down", n:6 },
+    { word:"SCOTT", clue:"Tom\u2019s middle name", hint:"not welsh", row:2, col:11, dir:"across", n:7 },
+    { word:"PUNCKNOWLE", clue:"The Dorset village where Flora grew up \u2014 good luck spelling it", hint:"pronounced \u2018punnel\u2019", row:2, col:17, dir:"down", n:8 },
+    { word:"MYRTLE", clue:"Flora\u2019s middle name \u2014 or an evergreen shrub", hint:"a classic wedding flower", row:3, col:1, dir:"across", n:9 },
+    { word:"AMOS", clue:"The brother making the wedding dress", hint:"old testament prophet", row:4, col:6, dir:"across", n:10 },
+    { word:"HOLLYBUSHCRACK", clue:"Tom\u2019s favourite route at Stanage", hint:"christmas leaf \u2013 Kate ___ \u2013 cocaine", row:6, col:4, dir:"across", n:11 },
+    { word:"SHEFFIELD", clue:"The city these two call home", hint:"cutlery", row:8, col:6, dir:"across", n:12 },
+    { word:"HAMPTON", clue:"Tom\u2019s old school", hint:"___ court palace", row:8, col:7, dir:"down", n:13 },
+    { word:"AMODO", clue:"Tom\u2019s design company", hint:"in fashion", row:9, col:1, dir:"down", n:14 },
+    { word:"MAMTOR", clue:"The Peak District hill where it all started with a kiss", hint:"mother hill", row:9, col:15, dir:"down", n:15 },
+    { word:"CORNWALL", clue:"Their spring pilgrimage, every year without fail", hint:"white cross on black", row:10, col:10, dir:"across", n:16 },
+    { word:"TORPOR", clue:"A state of sluggish inactivity", hint:"starts with a T", row:11, col:4, dir:"across", n:17 },
+    { word:"TOMMIT", clue:"What Inigo calls the groom", hint:"what Inigo calls the groom", row:12, col:10, dir:"across", n:18 },
+    { word:"FORTYTWO", clue:"Peaks Tom bagged on the Bob Graham Round", hint:"the answer to life, the universe, and everything", row:13, col:0, dir:"across", n:19 },
+    { word:"MARCH", clue:"The month it all began, 2021", hint:"the month it all began, 2021", row:14, col:13, dir:"across", n:20 }
+  ]
+};
+
+const W = PUZZLE.gridWidth, H = PUZZLE.gridHeight;
+const sol = Array.from({length:H}, ()=>Array(W).fill(null));
+const nums = Array.from({length:H}, ()=>Array(W).fill(0));
+const cw = Array.from({length:H}, ()=>Array.from({length:W}, ()=>[]));
+
+PUZZLE.words.forEach(e => {
+  nums[e.row][e.col] = e.n;
+  for (let i=0; i<e.word.length; i++) {
+    const r = e.dir==='down' ? e.row+i : e.row;
+    const c = e.dir==='across' ? e.col+i : e.col;
+    sol[r][c] = e.word[i];
+    cw[r][c].push(e);
+  }
+});
+
+let aCell=null, aDir='across', aWord=null, done=false;
+const revealed = new Set();
+
+const gridEl = document.getElementById('grid');
+gridEl.style.setProperty('--cols', W);
+gridEl.style.setProperty('--rows', H);
+const inp = Array.from({length:H}, ()=>Array(W).fill(null));
+const cel = Array.from({length:H}, ()=>Array(W).fill(null));
+
+for (let r=0; r<H; r++) {
+  for (let c=0; c<W; c++) {
+    const d = document.createElement('div');
+    d.className = 'cell';
+    if (sol[r][c]===null) { d.classList.add('black'); }
+    else {
+      if (nums[r][c]) { const s=document.createElement('span'); s.className='num'; s.textContent=nums[r][c]; d.appendChild(s); }
+      const input = document.createElement('input');
+      input.type='text'; input.maxLength=1;
+      input.setAttribute('autocomplete','off'); input.setAttribute('autocorrect','off');
+      input.setAttribute('autocapitalize','characters'); input.setAttribute('spellcheck','false');
+      input.dataset.row=r; input.dataset.col=c;
+      d.appendChild(input); inp[r][c]=input;
+      input.addEventListener('focus', ()=>onFocus(r,c));
+      input.addEventListener('input', e=>onInput(r,c,e));
+      input.addEventListener('keydown', e=>onKey(r,c,e));
+      input.addEventListener('click', ()=>{ if(aCell&&aCell.r===r&&aCell.c===c) togDir(r,c); });
+    }
+    cel[r][c]=d; gridEl.appendChild(d);
+  }
+}
+
+/* Build clue lists */
+function buildClueList(container) {
+  const across = PUZZLE.words.filter(w=>w.dir==='across').sort((a,b)=>a.n-b.n);
+  const down = PUZZLE.words.filter(w=>w.dir==='down').sort((a,b)=>a.n-b.n);
+  let html = '<h3>Across</h3>';
+  across.forEach(w => { html += `<div class="clue-item" data-n="${w.n}" data-dir="across"><span class="clue-num">${w.n}.</span>${w.clue}</div>`; });
+  html += '<h3>Down</h3>';
+  down.forEach(w => { html += `<div class="clue-item" data-n="${w.n}" data-dir="down"><span class="clue-num">${w.n}.</span>${w.clue}</div>`; });
+  container.innerHTML = html;
+  container.addEventListener('click', e => {
+    const item = e.target.closest('.clue-item');
+    if (!item) return;
+    const n = parseInt(item.dataset.n);
+    const w = PUZZLE.words.find(w=>w.n===n && w.dir===item.dataset.dir);
+    if (w) { selWord(w); if(inp[w.row][w.col]) inp[w.row][w.col].focus(); }
+  });
+}
+buildClueList(document.getElementById('clue-list-side'));
+buildClueList(document.getElementById('clue-list-bottom'));
+
+
+function selWord(e) { aWord=e; aDir=e.dir; updateHL(); }
+
+function togDir(r,c) {
+  const od = aDir==='across'?'down':'across';
+  const ow = cw[r][c].filter(w=>w.dir===od);
+  if(ow.length) { aDir=od; aWord=ow[0]; updateHL(); }
+}
+
+function onFocus(r,c) {
+  aCell={r,c};
+  const ws=cw[r][c], sd=ws.filter(w=>w.dir===aDir);
+  if(sd.length) aWord=sd[0];
+  else if(ws.length) { aWord=ws[0]; aDir=aWord.dir; }
+  updateHL();
+}
+
+function onInput(r,c,e) {
+  const v=e.target.value;
+  if(v.length) { e.target.value=v.slice(-1).toUpperCase(); cel[r][c].classList.remove('correct','incorrect'); moveNext(r,c); }
+  checkSilent();
+}
+
+/* Select all text on focus so typing overwrites existing letter */
+for(let r=0;r<H;r++) for(let c=0;c<W;c++) if(inp[r][c]) inp[r][c].addEventListener('focus', function() { this.select(); });
+
+function onKey(r,c,e) {
+  if(e.key==='Backspace') { if(!inp[r][c].value) { e.preventDefault(); movePrev(r,c); } else cel[r][c].classList.remove('correct','incorrect'); }
+  else if(e.key==='Tab') { e.preventDefault(); moveNextWord(e.shiftKey); }
+  else if(e.key==='ArrowRight') { e.preventDefault(); moveD(r,c,0,1); }
+  else if(e.key==='ArrowLeft') { e.preventDefault(); moveD(r,c,0,-1); }
+  else if(e.key==='ArrowDown') { e.preventDefault(); moveD(r,c,1,0); }
+  else if(e.key==='ArrowUp') { e.preventDefault(); moveD(r,c,-1,0); }
+  else if(e.key===' ') { e.preventDefault(); togDir(r,c); }
+}
+
+function moveD(r,c,dr,dc) { const nr=r+dr,nc=c+dc; if(nr>=0&&nr<H&&nc>=0&&nc<W&&inp[nr][nc]) inp[nr][nc].focus(); }
+function moveNext(r,c) { if(!aWord) return; const dr=aDir==='down'?1:0, dc=aDir==='across'?1:0, nr=r+dr, nc=c+dc; if(nr>=0&&nr<H&&nc>=0&&nc<W&&inp[nr][nc]) inp[nr][nc].focus(); }
+function movePrev(r,c) { if(!aWord) return; const dr=aDir==='down'?1:0, dc=aDir==='across'?1:0, nr=r-dr, nc=c-dc; if(nr>=0&&nr<H&&nc>=0&&nc<W&&inp[nr][nc]) { inp[nr][nc].focus(); inp[nr][nc].value=''; cel[nr][nc].classList.remove('correct','incorrect'); } }
+function moveNextWord(rev) {
+  if(!aWord) return;
+  const s=[...PUZZLE.words].sort((a,b)=>a.n-b.n);
+  const i=s.findIndex(w=>w===aWord);
+  const next=rev?(i>0?s[i-1]:s[s.length-1]):(i<s.length-1?s[i+1]:s[0]);
+  selWord(next); if(inp[next.row][next.col]) inp[next.row][next.col].focus();
+}
+
+function wordCells(e) {
+  const c=[]; for(let i=0;i<e.word.length;i++) { const r=e.dir==='down'?e.row+i:e.row, cc=e.dir==='across'?e.col+i:e.col; c.push({r,c:cc}); } return c;
+}
+
+function updateHL() {
+  for(let r=0;r<H;r++) for(let c=0;c<W;c++) cel[r][c].classList.remove('hl','active');
+  if(!aWord) return;
+  wordCells(aWord).forEach(({r,c})=>cel[r][c].classList.add('hl'));
+  if(aCell) cel[aCell.r][aCell.c].classList.add('active');
+  const banner = document.getElementById('clue-banner');
+  const dir = aWord.dir==='across'?'Across':'Down';
+  let html = `<span class="clue-label">${aWord.n} ${dir}:</span> <span class="clue-text">${aWord.clue}</span>`;
+  if (revealed.has(aWord.n)) {
+    html += `<br><span class="clue-hint">${aWord.hint}</span>`;
+  }
+  banner.innerHTML = html;
+  document.querySelectorAll('.clue-item').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.n)===aWord.n && el.dataset.dir===aWord.dir);
+  });
+  const activeItem = document.querySelector('.clue-list-side .clue-item.active');
+  if (activeItem) activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+/* Get Clue button */
+document.getElementById('btn-clue').addEventListener('click', () => {
+  if(!aWord) return;
+  revealed.add(aWord.n);
+  updateHL();
+});
+
+/* Check */
+document.getElementById('btn-check').addEventListener('click', () => {
+  if(done) return;
+  let ok=true, filled=true;
+  for(let r=0;r<H;r++) for(let c=0;c<W;c++) {
+    if(!sol[r][c]) continue;
+    const v=inp[r][c]?inp[r][c].value.toUpperCase():'';
+    if(!v) { filled=false; continue; }
+    if(v===sol[r][c]) { cel[r][c].classList.add('correct'); cel[r][c].classList.remove('incorrect'); }
+    else { cel[r][c].classList.remove('correct'); cel[r][c].classList.add('incorrect'); ok=false; }
+  }
+  const msg=document.getElementById('message');
+  if(filled&&ok) { done=true; triggerPosterReveal('puzzle-phase'); }
+  else if(!filled) { msg.textContent='Keep going \u2014 some cells are still empty!'; setTimeout(()=>{msg.textContent='';},3000); }
+  else { msg.textContent='Almost there \u2014 some letters are incorrect.'; setTimeout(()=>{msg.textContent='';},3000); }
+});
+
+/* Clear */
+document.getElementById('btn-clear').addEventListener('click', () => {
+  for(let r=0;r<H;r++) for(let c=0;c<W;c++) if(inp[r][c]) { inp[r][c].value=''; cel[r][c].classList.remove('correct','incorrect','all-ok'); }
+  document.getElementById('message').textContent='';
+});
+
+/* Silent completion */
+function checkSilent() {
+  if(done) return;
+  for(let r=0;r<H;r++) for(let c=0;c<W;c++) { if(sol[r][c]!==null) { const v=inp[r][c]?inp[r][c].value.toUpperCase():''; if(v!==sol[r][c]) return; } }
+  done=true;
+  for(let r=0;r<H;r++) for(let c=0;c<W;c++) if(sol[r][c]!==null) cel[r][c].classList.add('all-ok');
+  triggerPosterReveal('puzzle-phase');
+}
+</script>
+<script src="../assets/config.js"></script>
+<script src="../assets/poster.js?v=3"></script>
+<div style="position:fixed;bottom:0.5rem;left:0;right:0;text-align:center;font-family:'Josefin Sans',sans-serif;font-weight:300;font-size:0.55rem;color:rgba(255,245,230,0.15);letter-spacing:0.1em;pointer-events:none;">Made by Flora and Claude</div>
+</body>
+</html>
