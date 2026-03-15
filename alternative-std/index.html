@@ -32,13 +32,12 @@
   const ctx = canvas.getContext('2d');
 
   // --- Configuration ---
-  const CUTOUT_COUNT = 30;        // total floating cutouts
-  const MIN_SIZE = 60;
-  const MAX_SIZE = 140;
-  const MIN_SPEED = 0.5;
-  const MAX_SPEED = 2.5;
+  const MIN_SIZE = 100;
+  const MAX_SIZE = 180;
+  const MIN_SPEED = 0.15;
+  const MAX_SPEED = 0.6;
   const MOUSE_RADIUS = 120;       // pixels – repulsion zone around cursor
-  const MOUSE_FORCE = 8;          // strength of mouse push
+  const MOUSE_FORCE = 3;          // strength of mouse push
   const EDGE_BOUNCE_DAMPING = 0.9;
 
   // --- State ---
@@ -120,7 +119,9 @@
   function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
   function spawnCutouts() {
-    for (let i = 0; i < CUTOUT_COUNT; i++) {
+    // One cutout per image – no duplicates
+    const count = images.length || 1;
+    for (let i = 0; i < count; i++) {
       const size = randomBetween(MIN_SIZE, MAX_SIZE);
       const angle = Math.random() * Math.PI * 2;
       const speed = randomBetween(MIN_SPEED, MAX_SPEED);
@@ -131,9 +132,7 @@
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         size: size,
-        rotation: Math.random() * Math.PI * 2,
-        rotationSpeed: (Math.random() - 0.5) * 0.02,
-        img: images.length > 0 ? images[i % images.length] : null,
+        img: images.length > 0 ? images[i] : null,
         hue: Math.random() * 360  // fallback colour
       });
     }
@@ -176,8 +175,6 @@
       if (c.y - half < 0)       { c.y = half;          c.vy = Math.abs(c.vy) * EDGE_BOUNCE_DAMPING; }
       if (c.y + half > height)  { c.y = height - half; c.vy = -Math.abs(c.vy) * EDGE_BOUNCE_DAMPING; }
 
-      // Rotation
-      c.rotation += c.rotationSpeed;
     }
   }
 
@@ -188,7 +185,6 @@
     for (const c of cutouts) {
       ctx.save();
       ctx.translate(c.x, c.y);
-      ctx.rotate(c.rotation);
 
       if (c.img) {
         // Draw image, keeping aspect ratio, fitting into c.size
@@ -196,6 +192,46 @@
         let w, h;
         if (aspect > 1) { w = c.size; h = c.size / aspect; }
         else            { h = c.size; w = c.size * aspect; }
+
+        // iPhone-sticker-style soft white glow around the image
+        // We draw the image silhouette as a white shape with blur behind the actual image
+        const pad = 20; // extra space for the glow to breathe
+        const offW = Math.ceil(w + pad * 2);
+        const offH = Math.ceil(h + pad * 2);
+
+        // Use a cached glow canvas per cutout so we're not recreating every frame
+        if (!c._glowCanvas || c._glowDirty) {
+          const off = document.createElement('canvas');
+          off.width = offW;
+          off.height = offH;
+          const octx = off.getContext('2d');
+
+          // 1. Draw the image into the offscreen canvas
+          octx.drawImage(c.img, pad, pad, w, h);
+
+          // 2. Use composite to turn the image into a solid white silhouette
+          octx.globalCompositeOperation = 'source-in';
+          octx.fillStyle = 'white';
+          octx.fillRect(0, 0, offW, offH);
+          octx.globalCompositeOperation = 'source-over';
+
+          c._glowCanvas = off;
+          c._glowDirty = false;
+        }
+
+        // Draw the white silhouette with blur = soft glow
+        ctx.save();
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.85)';
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        // Draw the glow silhouette (the shadow is what creates the soft edge)
+        ctx.drawImage(c._glowCanvas, -w / 2 - pad, -h / 2 - pad);
+        // Draw it again to intensify the glow slightly
+        ctx.drawImage(c._glowCanvas, -w / 2 - pad, -h / 2 - pad);
+        ctx.restore();
+
+        // Draw the actual image on top
         ctx.drawImage(c.img, -w / 2, -h / 2, w, h);
       } else {
         // Placeholder circle

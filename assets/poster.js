@@ -114,12 +114,16 @@
         puzzleEl.style.transform = 'scale(0.96)';
         puzzleEl.style.pointerEvents = 'none';
       }
-      setTimeout(showPoster, 900);
+      setTimeout(() => {
+        showPoster();
+        if (window.startFloatingCutouts) window.startFloatingCutouts();
+      }, 900);
     }, 1800);
   };
 
   /* Back button */
   document.getElementById('poster-back').addEventListener('click', () => {
+    if (window.stopFloatingCutouts) window.stopFloatingCutouts();
     document.getElementById('poster-phase').classList.remove('visible');
     document.getElementById('poster-phase').querySelectorAll('.p-el').forEach(el => {
       el.classList.remove('anim');
