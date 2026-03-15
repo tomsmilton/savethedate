@@ -324,10 +324,27 @@ function updateHL() {
   wordCells(aWord).forEach(({r,c})=>cel[r][c].classList.add('hl'));
   if(aCell) cel[aCell.r][aCell.c].classList.add('active');
   const banner = document.getElementById('clue-banner');
-  const dir = aWord.dir==='across'?'Across':'Down';
-  let html = `<span class="clue-label">${aWord.n} ${dir}:</span> <span class="clue-text">${aWord.clue}</span>`;
-  if (revealed.has(aWord.n)) {
-    html += `<br><span class="clue-hint">${aWord.hint}</span>`;
+  let html = '';
+  if (aCell) {
+    const cellWords = cw[aCell.r][aCell.c];
+    const acrossW = cellWords.find(w => w.dir === 'across');
+    const downW = cellWords.find(w => w.dir === 'down');
+    if (acrossW && downW) {
+      const primary = aWord.dir === 'across' ? acrossW : downW;
+      const secondary = aWord.dir === 'across' ? downW : acrossW;
+      html += `<span class="clue-label">${primary.n} ${primary.dir==='across'?'Across':'Down'}:</span> <span class="clue-text">${primary.clue}</span>`;
+      if (revealed.has(primary.n)) html += ` <span class="clue-hint">${primary.hint}</span>`;
+      html += `<br><span class="clue-label" style="opacity:0.6">${secondary.n} ${secondary.dir==='across'?'Across':'Down'}:</span> <span class="clue-text" style="opacity:0.6">${secondary.clue}</span>`;
+      if (revealed.has(secondary.n)) html += ` <span class="clue-hint" style="opacity:0.6">${secondary.hint}</span>`;
+    } else {
+      const dir = aWord.dir==='across'?'Across':'Down';
+      html = `<span class="clue-label">${aWord.n} ${dir}:</span> <span class="clue-text">${aWord.clue}</span>`;
+      if (revealed.has(aWord.n)) html += `<br><span class="clue-hint">${aWord.hint}</span>`;
+    }
+  } else {
+    const dir = aWord.dir==='across'?'Across':'Down';
+    html = `<span class="clue-label">${aWord.n} ${dir}:</span> <span class="clue-text">${aWord.clue}</span>`;
+    if (revealed.has(aWord.n)) html += `<br><span class="clue-hint">${aWord.hint}</span>`;
   }
   banner.innerHTML = html;
   document.querySelectorAll('.clue-item').forEach(el => {
