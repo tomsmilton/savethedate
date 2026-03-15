@@ -12,5 +12,5 @@ window.trackEvent = function(event, puzzle) {
     timestamp: new Date().toISOString()
   };
   if (puzzle) data.puzzle = puzzle;
-  fetch(window.APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) }).catch(function() {});
+  fetch(window.APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) }).catch(function() {});
 };
