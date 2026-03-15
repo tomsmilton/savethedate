@@ -361,6 +361,9 @@ function updateHL() {
 document.getElementById('btn-clue').addEventListener('click', () => {
   if(!aWord) return;
   revealed.add(aWord.n);
+  if (aCell) {
+    cw[aCell.r][aCell.c].forEach(w => revealed.add(w.n));
+  }
   updateHL();
 });
 
