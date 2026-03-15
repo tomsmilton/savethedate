@@ -46,11 +46,11 @@
 
   // --- Load cutout images ---
   function loadImages(basePath) {
-    fetch(basePath + 'cutouts/manifest.json')
+    fetch(basePath + 'cutouts-webp/manifest.json')
       .then(r => r.json())
       .then(files => {
         let loaded = 0;
-        const paths = files.map(f => basePath + 'cutouts/' + f);
+        const paths = files.map(f => basePath + 'cutouts-webp/' + f);
         if (paths.length === 0) { spawnCutouts(); return; }
         paths.forEach(src => {
           const img = new Image();
