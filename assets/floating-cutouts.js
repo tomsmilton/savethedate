@@ -9,6 +9,12 @@
   const MOUSE_FORCE = 3;
   const EDGE_BOUNCE_DAMPING = 0.9;
 
+  // --- Mobile/tablet detection ---
+  const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  const SINK_DELAY = 10000; // 10 seconds before cutouts sink on mobile
+  const SINK_GRAVITY = 0.08; // gentle downward acceleration
+  const SINK_DURATION = 10000; // take ~10s to fully settle
+
   // --- State ---
   let canvas, ctx;
   let width, height;
@@ -16,6 +22,8 @@
   const cutouts = [];
   const images = [];
   let running = false;
+  let startTime = 0;
+  let sinking = false;
 
   function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
@@ -94,30 +102,59 @@
 
   // --- Physics ---
   function update() {
+    const elapsed = Date.now() - startTime;
+
+    // On touch devices, start sinking after SINK_DELAY
+    if (isTouchDevice && elapsed > SINK_DELAY) {
+      sinking = true;
+    }
+
     for (const c of cutouts) {
-      const dx = c.x - mouseX;
-      const dy = c.y - mouseY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < MOUSE_RADIUS && dist > 0) {
-        const force = (1 - dist / MOUSE_RADIUS) * MOUSE_FORCE;
-        c.vx += (dx / dist) * force;
-        c.vy += (dy / dist) * force;
+      if (sinking) {
+        // Apply gravity — pull downward
+        c.vy += SINK_GRAVITY;
+        // Dampen horizontal movement so they settle
+        c.vx *= 0.98;
+        c.x += c.vx;
+        c.y += c.vy;
+
+        // Rest at bottom
+        const half = c.size / 2;
+        if (c.y + half > height) {
+          c.y = height - half;
+          c.vy = -Math.abs(c.vy) * 0.3; // small bounce
+          if (Math.abs(c.vy) < 0.5) c.vy = 0; // stop bouncing
+        }
+        // Keep within horizontal bounds
+        if (c.x - half < 0)     { c.x = half;         c.vx = Math.abs(c.vx) * 0.3; }
+        if (c.x + half > width) { c.x = width - half; c.vx = -Math.abs(c.vx) * 0.3; }
+        if (c.y - half < 0)     { c.y = half;         c.vy = Math.abs(c.vy) * 0.3; }
+      } else {
+        // Normal floating physics
+        const dx = c.x - mouseX;
+        const dy = c.y - mouseY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MOUSE_RADIUS && dist > 0) {
+          const force = (1 - dist / MOUSE_RADIUS) * MOUSE_FORCE;
+          c.vx += (dx / dist) * force;
+          c.vy += (dy / dist) * force;
+        }
+        c.x += c.vx;
+        c.y += c.vy;
+        c.vx *= 0.995;
+        c.vy *= 0.995;
+        const spd = Math.sqrt(c.vx * c.vx + c.vy * c.vy);
+        if (spd < MIN_SPEED) {
+          const scale = MIN_SPEED / (spd || 1);
+          c.vx *= scale;
+          c.vy *= scale;
+        }
+        const half = c.size / 2;
+        if (c.x - half < 0)      { c.x = half;         c.vx = Math.abs(c.vx) * EDGE_BOUNCE_DAMPING; }
+        if (c.x + half > width)  { c.x = width - half; c.vx = -Math.abs(c.vx) * EDGE_BOUNCE_DAMPING; }
+        if (c.y - half < 0)      { c.y = half;         c.vy = Math.abs(c.vy) * EDGE_BOUNCE_DAMPING; }
+        if (c.y + half > height) { c.y = height - half; c.vy = -Math.abs(c.vy) * EDGE_BOUNCE_DAMPING; }
       }
-      c.x += c.vx;
-      c.y += c.vy;
-      c.vx *= 0.995;
-      c.vy *= 0.995;
-      const spd = Math.sqrt(c.vx * c.vx + c.vy * c.vy);
-      if (spd < MIN_SPEED) {
-        const scale = MIN_SPEED / (spd || 1);
-        c.vx *= scale;
-        c.vy *= scale;
-      }
-      const half = c.size / 2;
-      if (c.x - half < 0)      { c.x = half;         c.vx = Math.abs(c.vx) * EDGE_BOUNCE_DAMPING; }
-      if (c.x + half > width)  { c.x = width - half; c.vx = -Math.abs(c.vx) * EDGE_BOUNCE_DAMPING; }
-      if (c.y - half < 0)      { c.y = half;         c.vy = Math.abs(c.vy) * EDGE_BOUNCE_DAMPING; }
-      if (c.y + half > height) { c.y = height - half; c.vy = -Math.abs(c.vy) * EDGE_BOUNCE_DAMPING; }
     }
   }
 
@@ -181,6 +218,8 @@
     document.getElementById('poster-phase').appendChild(canvas);
     resize();
     running = true;
+    startTime = Date.now();
+    sinking = false;
 
     // Work out the base path to the alternative-std folder relative to the current page
     // Each puzzle page is at e.g. /crossword/index.html, so ../alternative-std/
