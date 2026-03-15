@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Save the Date &mdash; Flora &amp; Tom</title>
+<script src="../assets/transition.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Josefin+Sans:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/poster.css?v=3">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Josefin Sans', sans-serif; background: #1B3A4B; min-height: 100vh; }
+</style>
+</head>
+<body>
+
+<div id="puzzle-phase" style="display:none;"></div>
+
+<script src="../assets/config.js"></script>
+<script src="../assets/poster.js?v=3"></script>
+<script src="../assets/floating-cutouts.js"></script>
+<script>
+(function() {
+  // Hide the "back to puzzle" link since there's no puzzle
+  var backBtn = document.getElementById('poster-back');
+  if (backBtn) backBtn.style.display = 'none';
+
+  // Show poster immediately with confetti
+  var poster = document.getElementById('poster-phase');
+  poster.classList.add('visible');
+  poster.scrollTo(0, 0);
+  poster.querySelectorAll('.p-el').forEach(function(el) {
+    var delay = parseInt(el.dataset.delay) || 0;
+    var anim = el.dataset.anim || 'fadeInUp';
+    setTimeout(function() {
+      el.classList.add('anim');
+      el.style.animation = anim + ' 0.55s ease-out forwards';
+    }, delay);
+  });
+
+  // Launch confetti
+  var canvas = document.getElementById('confetti-canvas');
+  canvas.classList.add('show');
+  var ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  var pieces = [];
+  var colors = ['#D4A739','#E06050','#1F7A6F','#D4622B','#F5D5B8','#7b6d8d','#3D2B1F'];
+  for (var i = 0; i < 200; i++) {
+    pieces.push({
+      x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height,
+      w: Math.random()*8+4, h: Math.random()*6+3,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      vy: Math.random()*3+2, vx: (Math.random()-0.5)*2,
+      rot: Math.random()*Math.PI*2, vrot: (Math.random()-0.5)*0.2,
+    });
+  }
+  var frame = 0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(function(p) {
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vrot;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle=p.color; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    if (++frame < 200) requestAnimationFrame(draw);
+    else canvas.classList.remove('show');
+  }
+  draw();
+
+  // Start floating cutouts
+  if (window.startFloatingCutouts) window.startFloatingCutouts();
+
+  // Log skip event
+  var guestName = localStorage.getItem('guestName');
+  if (guestName && window.APPS_SCRIPT_URL) {
+    fetch(window.APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        firstName: localStorage.getItem('guestFirstName') || '',
+        surname: localStorage.getItem('guestSurname') || '',
+        email: localStorage.getItem('guestEmail') || '',
+        name: guestName,
+        event: 'skip_to_reveal',
+        timestamp: new Date().toISOString()
+      })
+    }).catch(function() {});
+  }
+})();
+</script>
+<div style="position:fixed;bottom:0.5rem;left:0;right:0;text-align:center;font-family:'Josefin Sans',sans-serif;font-weight:300;font-size:0.55rem;color:rgba(255,245,230,0.15);letter-spacing:0.1em;pointer-events:none;">Made by Flora and Claude</div>
+</body>
+</html>

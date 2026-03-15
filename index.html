@@ -207,6 +207,9 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
+  .card-skip { grid-column: 1 / -1; }
+  .card-skip .card-icon { color: rgba(255,245,230,0.4); }
+
   @media (max-width: 500px) {
     .cards { grid-template-columns: 1fr; max-width: 280px; margin: 0 auto; }
   }
@@ -257,6 +260,11 @@
         <div class="card-title">Wordle</div>
         <div class="card-desc">Guess the word in six tries</div>
       </a>
+      <a class="card card-skip" href="skip/index.html">
+        <div class="card-icon">&#x2192;</div>
+        <div class="card-title">Skip the games</div>
+        <div class="card-desc">Go straight to the reveal</div>
+      </a>
     </div>
 
     <div class="footer">Choose your challenge</div>
@@ -286,7 +294,7 @@
     var email = emailInput.value.trim();
     if (!firstName) { firstNameInput.focus(); return; }
     if (!surname) { surnameInput.focus(); return; }
-    if (!email) { emailInput.focus(); return; }
+    if (!email || !emailInput.validity.valid) { emailInput.focus(); return; }
     var fullName = firstName + ' ' + surname;
     localStorage.setItem('guestName', fullName);
     localStorage.setItem('guestFirstName', firstName);

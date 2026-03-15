@@ -61,8 +61,18 @@
     video.muted = true;
     video.playsInline = true;
     video.preload = 'auto';
-    video.src = getAssetsPath() + 'transition.webm';
     video.style.cssText = 'height:100%;width:auto;display:block;';
+
+    // Use HEVC .mov for Safari (supports alpha), WebM VP9 for others
+    var base = getAssetsPath();
+    var hevc = document.createElement('source');
+    hevc.src = base + 'transition.mov';
+    hevc.type = 'video/quicktime; codecs="hvc1"';
+    var webm = document.createElement('source');
+    webm.src = base + 'transition.webm';
+    webm.type = 'video/webm; codecs="vp9"';
+    video.appendChild(hevc);
+    video.appendChild(webm);
     overlay.appendChild(video);
 
     // Blue exit overlay (full screen)
@@ -138,13 +148,34 @@
   };
 
   // --- Enter transition ---
+  function showContent() {
+    var hideStyle = document.getElementById('transition-hide');
+    if (hideStyle) hideStyle.remove();
+    var content = getContentEl();
+    if (content) {
+      content.style.opacity = '0';
+      content.style.transition = 'opacity ' + CONTENT_FADE + 'ms ease-out';
+      content.offsetHeight;
+      content.style.opacity = '1';
+      setTimeout(function() { content.style.transition = 'none'; }, CONTENT_FADE);
+    }
+    overlay.style.transition = 'opacity ' + FADE_DURATION + 'ms ease-out';
+    overlay.style.opacity = '0';
+    setTimeout(function() {
+      overlay.style.display = 'none';
+      overlay.style.transition = 'none';
+    }, FADE_DURATION);
+  }
+
   function runEnterTransition() {
     sessionStorage.removeItem(FLAG_KEY);
 
-    var content = getContentEl();
-    if (!content) return;
+    // Safety timeout — never leave page blank for more than 3s
+    var done = false;
+    var safetyTimer = setTimeout(function() {
+      if (!done) { done = true; showContent(); }
+    }, 3000);
 
-    // Content is already hidden via injected CSS
     // Show video overlay
     overlay.style.display = 'flex';
     overlay.style.opacity = '1';
@@ -153,37 +184,13 @@
 
     function onEnded() {
       video.removeEventListener('ended', onEnded);
-
-      // Remove the injected hide style
-      var hideStyle = document.getElementById('transition-hide');
-      if (hideStyle) hideStyle.remove();
-
-      // Fade in content
-      content.style.opacity = '0';
-      content.style.transition = 'opacity ' + CONTENT_FADE + 'ms ease-out';
-      // Force reflow so transition triggers
-      content.offsetHeight;
-      content.style.opacity = '1';
-
-      // Fade out video overlay
-      overlay.style.transition = 'opacity ' + FADE_DURATION + 'ms ease-out';
-      overlay.style.opacity = '0';
-
-      setTimeout(function() {
-        overlay.style.display = 'none';
-        overlay.style.transition = 'none';
-        content.style.transition = 'none';
-      }, Math.max(FADE_DURATION, CONTENT_FADE));
+      if (!done) { done = true; clearTimeout(safetyTimer); showContent(); }
     }
 
     function startPlayback() {
       video.addEventListener('ended', onEnded);
       video.play().catch(function() {
-        // Autoplay blocked — just show content
-        var hideStyle = document.getElementById('transition-hide');
-        if (hideStyle) hideStyle.remove();
-        content.style.opacity = '1';
-        overlay.style.display = 'none';
+        if (!done) { done = true; clearTimeout(safetyTimer); showContent(); }
       });
     }
 
@@ -197,6 +204,17 @@
       });
     }
   }
+
+  // Clean up transition state when page is restored from bfcache (browser back button)
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) {
+      sessionStorage.removeItem(FLAG_KEY);
+      var hideStyle = document.getElementById('transition-hide');
+      if (hideStyle) hideStyle.remove();
+      if (blueOverlay) { blueOverlay.style.display = 'none'; blueOverlay.style.opacity = '0'; }
+      if (overlay) { overlay.style.display = 'none'; overlay.style.opacity = '0'; }
+    }
+  });
 
   // Run setup when DOM is ready
   if (document.readyState === 'loading') {
