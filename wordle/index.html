@@ -372,6 +372,7 @@
       if (won) {
         var messages = ['Genius!', 'Magnificent!', 'Impressive!', 'Splendid!', 'Great!', 'Phew!'];
         showMessage(messages[row] || 'Well done!');
+        if (window.trackEvent) trackEvent('wordle_won', 'wordle_attempts_' + (row + 1));
         setTimeout(function() {
           triggerPosterReveal('puzzle-phase', 'wordle');
         }, 1200);
