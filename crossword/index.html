@@ -56,17 +56,21 @@
   }
   .toolbar button.gold:hover { background: #c49a2e; border-color: #c49a2e; }
 
-  .clue-banner {
-    background: var(--accent); color: #FFF5E6; border-radius: 6px;
-    padding: 0.5rem 1rem; font-size: 0.82rem;
-    max-width: 600px; margin: 0 auto;
-    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-    min-height: 2rem; flex-wrap: wrap;
+  .clue-banner-wrap {
+    display: flex; flex-direction: column; gap: 0.35rem;
+    max-width: 600px; margin: 0 auto; width: 100%; padding: 0 1rem;
   }
-  .clue-banner:empty { display: none; }
-  .clue-banner .clue-label { font-weight: 600; color: var(--coral); }
-  .clue-banner .clue-text { color: #FFF5E6; }
-  .clue-banner .clue-hint {
+  .clue-banner-wrap:empty { display: none; }
+  .clue-box {
+    background: var(--accent); color: #FFF5E6; border-radius: 6px;
+    padding: 0.45rem 1rem; font-size: 0.82rem;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .clue-box.secondary { opacity: 0.55; }
+  .clue-box .clue-label { font-weight: 600; color: var(--coral); }
+  .clue-box .clue-text { color: #FFF5E6; }
+  .clue-box .clue-hint {
     color: var(--gold); font-style: italic; font-size: 0.78rem;
   }
 
@@ -159,7 +163,7 @@
     <button id="btn-clue" class="gold">Extra Clue</button>
     <button id="btn-clear">Clear All</button>
   </div>
-  <div class="clue-banner" id="clue-banner"></div>
+  <div class="clue-banner-wrap" id="clue-banner"></div>
   <div class="message" id="message"></div>
 
   <div class="main-layout">
@@ -324,6 +328,12 @@ function updateHL() {
   wordCells(aWord).forEach(({r,c})=>cel[r][c].classList.add('hl'));
   if(aCell) cel[aCell.r][aCell.c].classList.add('active');
   const banner = document.getElementById('clue-banner');
+  function clueBox(w, secondary) {
+    const dir = w.dir==='across'?'Across':'Down';
+    let h = `<div class="clue-box${secondary?' secondary':''}"><span class="clue-label">${w.n} ${dir}:</span> <span class="clue-text">${w.clue}</span>`;
+    if (revealed.has(w.n)) h += ` <span class="clue-hint">${w.hint}</span>`;
+    return h + '</div>';
+  }
   let html = '';
   if (aCell) {
     const cellWords = cw[aCell.r][aCell.c];
@@ -332,19 +342,12 @@ function updateHL() {
     if (acrossW && downW) {
       const primary = aWord.dir === 'across' ? acrossW : downW;
       const secondary = aWord.dir === 'across' ? downW : acrossW;
-      html += `<span class="clue-label">${primary.n} ${primary.dir==='across'?'Across':'Down'}:</span> <span class="clue-text">${primary.clue}</span>`;
-      if (revealed.has(primary.n)) html += ` <span class="clue-hint">${primary.hint}</span>`;
-      html += `<br><span class="clue-label" style="opacity:0.6">${secondary.n} ${secondary.dir==='across'?'Across':'Down'}:</span> <span class="clue-text" style="opacity:0.6">${secondary.clue}</span>`;
-      if (revealed.has(secondary.n)) html += ` <span class="clue-hint" style="opacity:0.6">${secondary.hint}</span>`;
+      html = clueBox(primary, false) + clueBox(secondary, true);
     } else {
-      const dir = aWord.dir==='across'?'Across':'Down';
-      html = `<span class="clue-label">${aWord.n} ${dir}:</span> <span class="clue-text">${aWord.clue}</span>`;
-      if (revealed.has(aWord.n)) html += `<br><span class="clue-hint">${aWord.hint}</span>`;
+      html = clueBox(aWord, false);
     }
   } else {
-    const dir = aWord.dir==='across'?'Across':'Down';
-    html = `<span class="clue-label">${aWord.n} ${dir}:</span> <span class="clue-text">${aWord.clue}</span>`;
-    if (revealed.has(aWord.n)) html += `<br><span class="clue-hint">${aWord.hint}</span>`;
+    html = clueBox(aWord, false);
   }
   banner.innerHTML = html;
   document.querySelectorAll('.clue-item').forEach(el => {
