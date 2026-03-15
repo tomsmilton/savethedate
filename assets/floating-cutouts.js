@@ -127,7 +127,7 @@
     restartBtn = document.createElement('button');
     restartBtn.textContent = 'Restart the heads';
     restartBtn.style.cssText = [
-      'position:fixed', 'bottom:0.8rem', 'left:50%', 'transform:translateX(-50%)',
+      'position:fixed', 'bottom:1.8rem', 'left:50%', 'transform:translateX(-50%)',
       'font-family:"Josefin Sans",sans-serif', 'font-size:0.65rem',
       'color:rgba(255,245,230,0.4)', 'background:rgba(255,245,230,0.08)',
       'border:1px solid rgba(255,245,230,0.15)', 'border-radius:4px',
