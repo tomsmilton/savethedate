@@ -67,7 +67,7 @@
     var base = getAssetsPath();
     var hevc = document.createElement('source');
     hevc.src = base + 'transition.mov';
-    hevc.type = 'video/quicktime; codecs="hvc1"';
+    hevc.type = 'video/mp4; codecs="hvc1"';
     var webm = document.createElement('source');
     webm.src = base + 'transition.webm';
     webm.type = 'video/webm; codecs="vp9"';
