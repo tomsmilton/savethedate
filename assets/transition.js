@@ -170,39 +170,36 @@
   function runEnterTransition() {
     sessionStorage.removeItem(FLAG_KEY);
 
-    // Safety timeout — never leave page blank for more than 3s
     var done = false;
-    var safetyTimer = setTimeout(function() {
-      if (!done) { done = true; showContent(); }
-    }, 3000);
+    function finish() {
+      if (done) return;
+      done = true;
+      clearTimeout(safetyTimer);
+      showContent();
+    }
+
+    // Safety timeout — never leave page blank for more than 3s
+    var safetyTimer = setTimeout(finish, 3000);
 
     // Show video overlay
     overlay.style.display = 'flex';
     overlay.style.opacity = '1';
     overlay.style.transition = 'none';
     video.currentTime = 0;
+    video.addEventListener('ended', finish);
+    video.addEventListener('error', finish);
 
-    function onEnded() {
-      video.removeEventListener('ended', onEnded);
-      if (!done) { done = true; clearTimeout(safetyTimer); showContent(); }
-    }
-
-    function startPlayback() {
-      video.addEventListener('ended', onEnded);
-      video.play().catch(function() {
-        if (!done) { done = true; clearTimeout(safetyTimer); showContent(); }
+    // Try to play immediately — works if cached or loads fast
+    video.play().catch(function() {
+      // Not ready yet — wait for any data, then retry
+      if (done) return;
+      video.addEventListener('canplay', function handler() {
+        video.removeEventListener('canplay', handler);
+        video.play().catch(finish);
       });
-    }
-
-    // Wait for video to be ready before playing
-    if (video.readyState >= 3) {
-      startPlayback();
-    } else {
-      video.addEventListener('canplaythrough', function handler() {
-        video.removeEventListener('canplaythrough', handler);
-        startPlayback();
-      });
-    }
+      // Also handle case where no source is supported at all
+      video.addEventListener('error', finish);
+    });
   }
 
   // Clean up transition state when page is restored from bfcache (browser back button)

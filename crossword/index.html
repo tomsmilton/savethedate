@@ -49,8 +49,12 @@
     cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em;
   }
   .toolbar button:hover { background: var(--accent); color: white; }
-  .toolbar button.gold { border-color: var(--gold); color: #8B6914; }
-  .toolbar button.gold:hover { background: var(--gold); color: white; }
+  .toolbar button.gold {
+    border-color: var(--gold); color: white; background: var(--gold);
+    font-size: 1rem; font-weight: 600; padding: 0.6rem 1.8rem;
+    letter-spacing: 0.08em;
+  }
+  .toolbar button.gold:hover { background: #c49a2e; border-color: #c49a2e; }
 
   .clue-banner {
     background: var(--accent); color: #FFF5E6; border-radius: 6px;

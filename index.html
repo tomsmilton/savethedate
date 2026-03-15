@@ -188,6 +188,24 @@
     background: rgba(212,167,57,0.3);
     border-color: #D4A739;
   }
+  .name-gate-error {
+    font-family: 'Josefin Sans', sans-serif;
+    font-size: 0.75rem;
+    color: #E8A87C;
+    opacity: 0;
+    transition: opacity 0.3s;
+    min-height: 1.2em;
+  }
+  .name-gate-error.show { opacity: 1; }
+  .name-gate-input.invalid {
+    border-color: #E8A87C;
+    animation: shake 0.4s ease;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+  }
 
   .puzzles-section { display: none; }
   .puzzles-section.visible { display: contents; }
@@ -234,6 +252,7 @@
     <input class="name-gate-input" id="surname-input" type="text" placeholder="Surname" autocomplete="family-name">
     <input class="name-gate-input" id="email-input" type="email" placeholder="Email" autocomplete="email">
     <button class="name-gate-btn" id="name-btn">Continue</button>
+    <div class="name-gate-error" id="gate-error"></div>
   </div>
 
   <div id="puzzles-section" class="puzzles-section">
@@ -281,6 +300,8 @@
   var emailInput = document.getElementById('email-input');
   var btn = document.getElementById('name-btn');
 
+  var errorEl = document.getElementById('gate-error');
+
   var savedName = localStorage.getItem('guestName');
   if (savedName) {
     gate.style.display = 'none';
@@ -288,13 +309,25 @@
     return;
   }
 
+  function showError(input, msg) {
+    errorEl.textContent = msg;
+    errorEl.classList.add('show');
+    input.classList.add('invalid');
+    input.focus();
+    input.addEventListener('input', function handler() {
+      input.removeEventListener('input', handler);
+      input.classList.remove('invalid');
+      errorEl.classList.remove('show');
+    });
+  }
+
   function submit() {
     var firstName = firstNameInput.value.trim();
     var surname = surnameInput.value.trim();
     var email = emailInput.value.trim();
-    if (!firstName) { firstNameInput.focus(); return; }
-    if (!surname) { surnameInput.focus(); return; }
-    if (!email || !emailInput.validity.valid) { emailInput.focus(); return; }
+    if (!firstName) { showError(firstNameInput, 'Please enter your first name'); return; }
+    if (!surname) { showError(surnameInput, 'Please enter your surname'); return; }
+    if (!email || !emailInput.validity.valid) { showError(emailInput, 'Please enter a valid email address'); return; }
     var fullName = firstName + ' ' + surname;
     localStorage.setItem('guestName', fullName);
     localStorage.setItem('guestFirstName', firstName);
