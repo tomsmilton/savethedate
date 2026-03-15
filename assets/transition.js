@@ -27,7 +27,7 @@
     var path = window.location.pathname;
     if (path.endsWith('/index.html')) path = path.replace('/index.html', '/');
     var depth = path.split('/').filter(Boolean).length;
-    if (depth > 1) return '../assets/';
+    if (depth >= 1) return '../assets/';
     return 'assets/';
   }
 
@@ -176,14 +176,26 @@
       }, Math.max(FADE_DURATION, CONTENT_FADE));
     }
 
-    video.addEventListener('ended', onEnded);
-    video.play().catch(function() {
-      // Autoplay blocked — just show content
-      var hideStyle = document.getElementById('transition-hide');
-      if (hideStyle) hideStyle.remove();
-      content.style.opacity = '1';
-      overlay.style.display = 'none';
-    });
+    function startPlayback() {
+      video.addEventListener('ended', onEnded);
+      video.play().catch(function() {
+        // Autoplay blocked — just show content
+        var hideStyle = document.getElementById('transition-hide');
+        if (hideStyle) hideStyle.remove();
+        content.style.opacity = '1';
+        overlay.style.display = 'none';
+      });
+    }
+
+    // Wait for video to be ready before playing
+    if (video.readyState >= 3) {
+      startPlayback();
+    } else {
+      video.addEventListener('canplaythrough', function handler() {
+        video.removeEventListener('canplaythrough', handler);
+        startPlayback();
+      });
+    }
   }
 
   // Run setup when DOM is ready
