@@ -196,7 +196,7 @@
   function updateScore() {
     document.getElementById('found-count').textContent = found.size;
     if (found.size === differences.length) {
-      triggerPosterReveal('puzzle-phase');
+      triggerPosterReveal('puzzle-phase', 'difference');
     }
   }
 
@@ -288,6 +288,7 @@
 })();
 </script>
 <script src="../assets/config.js"></script>
+<script>if(window.trackEvent) trackEvent('puzzle_attempt', 'difference');</script>
 <script src="../assets/poster.js?v=3"></script>
 <script src="../assets/floating-cutouts.js"></script>
 <div style="position:fixed;bottom:0.5rem;left:0;right:0;text-align:center;font-family:'Josefin Sans',sans-serif;font-weight:300;font-size:0.55rem;color:rgba(255,245,230,0.15);letter-spacing:0.1em;pointer-events:none;">Made by Flora and Claude</div>

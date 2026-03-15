@@ -75,20 +75,7 @@
   if (window.startFloatingCutouts) window.startFloatingCutouts();
 
   // Log skip event
-  var guestName = localStorage.getItem('guestName');
-  if (guestName && window.APPS_SCRIPT_URL) {
-    fetch(window.APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        firstName: localStorage.getItem('guestFirstName') || '',
-        surname: localStorage.getItem('guestSurname') || '',
-        email: localStorage.getItem('guestEmail') || '',
-        name: guestName,
-        event: 'skip_to_reveal',
-        timestamp: new Date().toISOString()
-      })
-    }).catch(function() {});
-  }
+  if (window.trackEvent) trackEvent('skip_to_reveal');
 })();
 </script>
 <div style="position:fixed;bottom:0.5rem;left:0;right:0;text-align:center;font-family:'Josefin Sans',sans-serif;font-weight:300;font-size:0.55rem;color:rgba(255,245,230,0.15);letter-spacing:0.1em;pointer-events:none;">Made by Flora and Claude</div>

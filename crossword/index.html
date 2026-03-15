@@ -356,7 +356,7 @@ document.getElementById('btn-check').addEventListener('click', () => {
     else { cel[r][c].classList.remove('correct'); cel[r][c].classList.add('incorrect'); ok=false; }
   }
   const msg=document.getElementById('message');
-  if(filled&&ok) { done=true; triggerPosterReveal('puzzle-phase'); }
+  if(filled&&ok) { done=true; triggerPosterReveal('puzzle-phase', 'crossword'); }
   else if(!filled) { msg.textContent='Keep going \u2014 some cells are still empty!'; setTimeout(()=>{msg.textContent='';},3000); }
   else { msg.textContent='Almost there \u2014 some letters are incorrect.'; setTimeout(()=>{msg.textContent='';},3000); }
 });
@@ -373,10 +373,11 @@ function checkSilent() {
   for(let r=0;r<H;r++) for(let c=0;c<W;c++) { if(sol[r][c]!==null) { const v=inp[r][c]?inp[r][c].value.toUpperCase():''; if(v!==sol[r][c]) return; } }
   done=true;
   for(let r=0;r<H;r++) for(let c=0;c<W;c++) if(sol[r][c]!==null) cel[r][c].classList.add('all-ok');
-  triggerPosterReveal('puzzle-phase');
+  triggerPosterReveal('puzzle-phase', 'crossword');
 }
 </script>
 <script src="../assets/config.js"></script>
+<script>if(window.trackEvent) trackEvent('puzzle_attempt', 'crossword');</script>
 <script src="../assets/poster.js?v=3"></script>
 <script src="../assets/floating-cutouts.js"></script>
 <div style="position:fixed;bottom:0.5rem;left:0;right:0;text-align:center;font-family:'Josefin Sans',sans-serif;font-weight:300;font-size:0.55rem;color:rgba(255,245,230,0.15);letter-spacing:0.1em;pointer-events:none;">Made by Flora and Claude</div>

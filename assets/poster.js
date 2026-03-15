@@ -88,23 +88,9 @@
   }
 
   /* Public API */
-  window.triggerPosterReveal = function (puzzlePhaseId) {
+  window.triggerPosterReveal = function (puzzlePhaseId, puzzleName) {
     window._puzzlePhaseId = puzzlePhaseId;
-    var guestName = localStorage.getItem('guestName');
-    if (guestName && window.APPS_SCRIPT_URL) {
-      fetch(window.APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          firstName: localStorage.getItem('guestFirstName') || '',
-          surname: localStorage.getItem('guestSurname') || '',
-          email: localStorage.getItem('guestEmail') || '',
-          name: guestName,
-          event: 'puzzle_complete',
-          puzzle: puzzlePhaseId,
-          timestamp: new Date().toISOString()
-        })
-      }).catch(function() {});
-    }
+    if (window.trackEvent) window.trackEvent('puzzle_complete', puzzleName || puzzlePhaseId);
     setTimeout(launchConfetti, 400);
     setTimeout(() => {
       const puzzleEl = document.getElementById(puzzlePhaseId);

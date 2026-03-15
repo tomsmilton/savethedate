@@ -227,6 +227,7 @@
 </div>
 
 <script src="../assets/config.js"></script>
+<script>if(window.trackEvent) trackEvent('puzzle_attempt', 'wordle');</script>
 <script src="../assets/poster.js"></script>
 <script src="../assets/floating-cutouts.js"></script>
 <script>
@@ -372,7 +373,7 @@
         var messages = ['Genius!', 'Magnificent!', 'Impressive!', 'Splendid!', 'Great!', 'Phew!'];
         showMessage(messages[row] || 'Well done!');
         setTimeout(function() {
-          triggerPosterReveal('puzzle-phase');
+          triggerPosterReveal('puzzle-phase', 'wordle');
         }, 1200);
       } else if (row >= MAX_GUESSES - 1) {
         showMessage('The word was ' + ANSWER);

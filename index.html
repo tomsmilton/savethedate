@@ -336,10 +336,7 @@
     gate.style.display = 'none';
     puzzles.classList.add('visible');
     playTransition();
-    fetch(window.APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ firstName: firstName, surname: surname, email: email, name: fullName, event: 'visit', timestamp: new Date().toISOString() })
-    }).catch(function() {});
+    if (window.trackEvent) trackEvent('visit');
   }
 
   btn.addEventListener('click', submit);
