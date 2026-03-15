@@ -5,6 +5,7 @@
   const MAX_SIZE = 180;
   const MIN_SPEED = 0.15;
   const MAX_SPEED = 0.6;
+  const VELOCITY_CAP = 4;
   const MOUSE_RADIUS = 120;
   const MOUSE_FORCE = 3;
   const EDGE_BOUNCE_DAMPING = 0.9;
@@ -100,6 +101,24 @@
     }
   }
 
+  // --- Poster card exclusion zone (desktop only) ---
+  const CARD_PADDING = 30; // extra margin around the card
+  const CARD_REPEL = 3;    // repulsion force — gentle push
+
+  function getCardRect() {
+    const card = document.querySelector('.poster-card');
+    if (!card) return null;
+    const r = card.getBoundingClientRect();
+    return {
+      left: r.left - CARD_PADDING,
+      right: r.right + CARD_PADDING,
+      top: r.top - CARD_PADDING,
+      bottom: r.bottom + CARD_PADDING,
+      cx: (r.left + r.right) / 2,
+      cy: (r.top + r.bottom) / 2
+    };
+  }
+
   // --- Physics ---
   function update() {
     const elapsed = Date.now() - startTime;
@@ -108,6 +127,9 @@
     if (isTouchDevice && elapsed > SINK_DELAY) {
       sinking = true;
     }
+
+    // After 10s: on desktop repel from poster card, on mobile sink
+    const cardRect = (!isTouchDevice && elapsed > SINK_DELAY) ? getCardRect() : null;
 
     for (const c of cutouts) {
       if (sinking) {
@@ -139,6 +161,31 @@
           c.vx += (dx / dist) * force;
           c.vy += (dy / dist) * force;
         }
+
+        // Repel from poster card area on desktop — gentle drift away
+        if (cardRect) {
+          const half = c.size / 2;
+          if (c.x + half > cardRect.left && c.x - half < cardRect.right &&
+              c.y + half > cardRect.top && c.y - half < cardRect.bottom) {
+            const pushX = c.x - cardRect.cx;
+            const pushY = c.y - cardRect.cy;
+            const pushDist = Math.sqrt(pushX * pushX + pushY * pushY) || 1;
+            c.vx += (pushX / pushDist) * CARD_REPEL;
+            c.vy += (pushY / pushDist) * CARD_REPEL;
+            // Dampen so they drift gently rather than fly off
+            c.vx *= 0.92;
+            c.vy *= 0.92;
+          }
+        }
+
+        // Cap velocity so cutouts never fly too fast
+        const spd2 = Math.sqrt(c.vx * c.vx + c.vy * c.vy);
+        if (spd2 > VELOCITY_CAP) {
+          const clamp = VELOCITY_CAP / spd2;
+          c.vx *= clamp;
+          c.vy *= clamp;
+        }
+
         c.x += c.vx;
         c.y += c.vy;
         c.vx *= 0.995;
